@@ -1,0 +1,771 @@
+{
+  "app": "schema-planerare",
+  "version": 1,
+  "exportedAt": "2026-03-10T13:39:29.862Z",
+  "schedules": {
+    "calendarA": [
+      {
+        "id": "calendarA-1772786535465-1c398850817398",
+        "title": "Damer A",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "18:00",
+        "endTime": "19:30"
+      },
+      {
+        "id": "calendarA-1772786544021-7a05488cbc38d",
+        "title": "F-GUDH",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "18:00",
+        "endTime": "19:30"
+      },
+      {
+        "id": "calendarA-1772786549911-4cd82422178a2",
+        "title": "Herrar A",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "19:30",
+        "endTime": "21:00"
+      },
+      {
+        "id": "calendarA-1772786555469-103d367aec44a",
+        "title": "Herrar U",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "19:30",
+        "endTime": "21:00"
+      },
+      {
+        "id": "calendarA-1772786598219-5b2bc0a82a9e28",
+        "title": "Herrar A",
+        "daysOfWeek": [
+          3
+        ],
+        "startTime": "18:00",
+        "endTime": "19:30"
+      },
+      {
+        "id": "calendarA-1772786697576-600681b84d6d6",
+        "title": "Herrar U",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "19:30",
+        "endTime": "21:00"
+      },
+      {
+        "id": "calendarA-1772786701931-3c7ad5cd187a08",
+        "title": "Damer A",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "18:00",
+        "endTime": "19:30"
+      },
+      {
+        "id": "calendarA-1772786772956-cf36eee67f102",
+        "title": "P-GUDH",
+        "daysOfWeek": [
+          5
+        ],
+        "startTime": "16:30",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarA-1772786777515-966a0b673bfdf",
+        "title": "F-GUDH",
+        "daysOfWeek": [
+          5
+        ],
+        "startTime": "16:30",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarA-1772788949199-89f9957cf98878",
+        "title": "P-GUDH",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "16:30",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarA-1772788986956-8adee8748fda58",
+        "title": "Matchtid (Damer A, jämna veckor)",
+        "daysOfWeek": [
+          2
+        ],
+        "startTime": "18:00",
+        "endTime": "21:00"
+      },
+      {
+        "id": "calendarA-1772789061305-39a1a6d5367018",
+        "title": "F-GUDH",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "16:30",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarA-1772789105815-5d26855b286cd8",
+        "title": "Matchtid (Herrar A, udda veckor)",
+        "daysOfWeek": [
+          5
+        ],
+        "startTime": "18:00",
+        "endTime": "21:00"
+      },
+      {
+        "id": "calendarA-1772789170154-188b4de20d825",
+        "title": "Matchtid (Herrar U, udda veckor)",
+        "daysOfWeek": [
+          0
+        ],
+        "startTime": "11:00",
+        "endTime": "13:00"
+      },
+      {
+        "id": "calendarA-1772792487652-1cd37cf42df6d8",
+        "title": "Stjärnlaget",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarA-1772792494569-aeb2c8f70a363",
+        "title": "P12 9️⃣",
+        "daysOfWeek": [
+          3
+        ],
+        "startTime": "16:30",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarA-1772792513754-7a61183533c9",
+        "title": "F12 9️⃣",
+        "daysOfWeek": [
+          5
+        ],
+        "startTime": "16:30",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarA-1773146282612-c3a71a1d63eb28",
+        "title": "F12 9️⃣",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "16:30",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarA-1773146290539-4d9d88610b13f",
+        "title": "F13 9️⃣",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "16:30",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarA-1773149939594-286330ad741c5",
+        "title": "Stjärnlaget",
+        "daysOfWeek": [
+          0
+        ],
+        "startTime": "13:00",
+        "endTime": "14:00"
+      }
+    ],
+    "calendarB": [
+      {
+        "id": "calendarB-1772789511532-721dbd0584146",
+        "title": "Kastdag Friidrott",
+        "daysOfWeek": [
+          2
+        ],
+        "startTime": "18:00",
+        "endTime": "19:30"
+      },
+      {
+        "id": "calendarB-1772792745209-d50133493ccc78",
+        "title": "P15 7️⃣",
+        "daysOfWeek": [
+          5
+        ],
+        "startTime": "17:30",
+        "endTime": "18:30"
+      },
+      {
+        "id": "calendarB-1772792748953-86e9763dfb0e1",
+        "title": "F13 9️⃣",
+        "daysOfWeek": [
+          5
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarB-1772792753300-eb9c8b68d8e71",
+        "title": "P13 9️⃣",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "16:30",
+        "endTime": "17:30"
+      },
+      {
+        "id": "calendarB-1772792756167-ad1f45691934f8",
+        "title": "P16 7️⃣",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "16:30",
+        "endTime": "17:30"
+      },
+      {
+        "id": "calendarB-1772792759760-a128553d3b0ca",
+        "title": "P14 7️⃣",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "17:30",
+        "endTime": "18:30"
+      },
+      {
+        "id": "calendarB-1772792763334-7127550a24e57",
+        "title": "P15 7️⃣",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "17:30",
+        "endTime": "18:30"
+      },
+      {
+        "id": "calendarB-1772792767331-2c53dccac9da48",
+        "title": "P12 9️⃣",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "18:30",
+        "endTime": "20:00"
+      },
+      {
+        "id": "calendarB-1772792781148-94e5ccd24d3e9",
+        "title": "P16 7️⃣",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "16:30",
+        "endTime": "17:30"
+      },
+      {
+        "id": "calendarB-1772792784500-223d73349195a",
+        "title": "P13 9️⃣",
+        "daysOfWeek": [
+          2
+        ],
+        "startTime": "16:30",
+        "endTime": "17:30"
+      },
+      {
+        "id": "calendarB-1772792787546-89ffb60db0abb",
+        "title": "P15 7️⃣",
+        "daysOfWeek": [
+          2
+        ],
+        "startTime": "17:30",
+        "endTime": "18:30"
+      },
+      {
+        "id": "calendarB-1772792791973-bb95a338476518",
+        "title": "P14 7️⃣",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "17:30",
+        "endTime": "18:30"
+      },
+      {
+        "id": "calendarB-1772792795790-f2f4b78135ad2",
+        "title": "F16 7️⃣",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "17:30",
+        "endTime": "18:30"
+      },
+      {
+        "id": "calendarB-1772792800171-e27cee9a348078",
+        "title": "F15 7️⃣",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "18:00",
+        "endTime": "19:00"
+      },
+      {
+        "id": "calendarB-1772792804214-c0a2de25b3216",
+        "title": "F14 7️⃣",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "18:30",
+        "endTime": "20:00"
+      },
+      {
+        "id": "calendarB-1772792811571-d8e12df375a51",
+        "title": "P12 9️⃣",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "19:00",
+        "endTime": "20:30"
+      },
+      {
+        "id": "calendarB-1772792820297-64fa82da7a6218",
+        "title": "F12 9️⃣",
+        "daysOfWeek": [
+          3
+        ],
+        "startTime": "16:30",
+        "endTime": "17:30"
+      },
+      {
+        "id": "calendarB-1772792823242-aba7f840e53af8",
+        "title": "F13 9️⃣",
+        "daysOfWeek": [
+          3
+        ],
+        "startTime": "16:30",
+        "endTime": "17:30"
+      },
+      {
+        "id": "calendarB-1772792826380-80be7b7b3eacc8",
+        "title": "F15 7️⃣",
+        "daysOfWeek": [
+          3
+        ],
+        "startTime": "17:30",
+        "endTime": "19:00"
+      },
+      {
+        "id": "calendarB-1772792832133-73d5ecbd7efe4",
+        "title": "F16 7️⃣",
+        "daysOfWeek": [
+          3
+        ],
+        "startTime": "17:30",
+        "endTime": "19:00"
+      },
+      {
+        "id": "calendarB-1772792837018-0eff15f8c839d",
+        "title": "F14 7️⃣",
+        "daysOfWeek": [
+          3
+        ],
+        "startTime": "18:30",
+        "endTime": "20:00"
+      }
+    ],
+    "calendarS": [
+      {
+        "id": "calendarS-1772789409587-fa784564cda198",
+        "title": "PF21",
+        "daysOfWeek": [
+          6
+        ],
+        "startTime": "09:30",
+        "endTime": "10:30"
+      },
+      {
+        "id": "calendarS-1772792694335-81d4b96381426",
+        "title": "P17 5️⃣",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "16:30",
+        "endTime": "17:30"
+      },
+      {
+        "id": "calendarS-1772792698445-67cc4fc2841308",
+        "title": "P18 5️⃣",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarS-1772792704031-db9ef0338ecfd8",
+        "title": "F17 5️⃣",
+        "daysOfWeek": [
+          3
+        ],
+        "startTime": "16:30",
+        "endTime": "17:30"
+      },
+      {
+        "id": "calendarS-1772792707572-483885a8b36578",
+        "title": "F18 5️⃣",
+        "daysOfWeek": [
+          3
+        ],
+        "startTime": "17:30",
+        "endTime": "18:30"
+      },
+      {
+        "id": "calendarS-1772792716449-60b59217e78278",
+        "title": "P17 5️⃣",
+        "daysOfWeek": [
+          2
+        ],
+        "startTime": "16:30",
+        "endTime": "17:30"
+      },
+      {
+        "id": "calendarS-1772792719712-fb79c2b6024d2",
+        "title": "F17 5️⃣",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "16:30",
+        "endTime": "17:30"
+      },
+      {
+        "id": "calendarS-1772792724310-ad19b3dca5ad48",
+        "title": "P18 5️⃣",
+        "daysOfWeek": [
+          0
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarS-1773143827723-0957fa45162038",
+        "title": "P19 3️⃣",
+        "daysOfWeek": [
+          6
+        ],
+        "startTime": "09:30",
+        "endTime": "10:30"
+      },
+      {
+        "id": "calendarS-1773143840428-3026dd99e2759",
+        "title": "F19 3️⃣",
+        "daysOfWeek": [
+          3
+        ],
+        "startTime": "17:30",
+        "endTime": "18:30"
+      },
+      {
+        "id": "calendarS-1773143872649-e68034802192e",
+        "title": "PF20 3️⃣",
+        "daysOfWeek": [
+          6
+        ],
+        "startTime": "09:30",
+        "endTime": "10:30"
+      }
+    ],
+    "calendarF": [
+      {
+        "id": "calendarF-1772788919253-6052661b63ed98",
+        "title": "Damer A",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "18:00",
+        "endTime": "19:30"
+      },
+      {
+        "id": "calendarF-1772788919253-0e2d85b1f95ea8",
+        "title": "F-GUDH",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "18:00",
+        "endTime": "19:30"
+      },
+      {
+        "id": "calendarF-1772788919253-758d7d6f5109f",
+        "title": "Herrar A",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "19:30",
+        "endTime": "21:00"
+      },
+      {
+        "id": "calendarF-1772788919253-871739c089a0b8",
+        "title": "Herrar U",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "19:30",
+        "endTime": "21:00"
+      },
+      {
+        "id": "calendarF-1772788919253-7fe709d9cfb75",
+        "title": "P-GUDH",
+        "daysOfWeek": [
+          2
+        ],
+        "startTime": "18:00",
+        "endTime": "19:30"
+      },
+      {
+        "id": "calendarF-1772788919253-f20f31f76def28",
+        "title": "F-GUDH",
+        "daysOfWeek": [
+          2
+        ],
+        "startTime": "18:00",
+        "endTime": "19:30"
+      },
+      {
+        "id": "calendarF-1772788919253-f3f77104a1043",
+        "title": "Herrar A",
+        "daysOfWeek": [
+          3
+        ],
+        "startTime": "18:00",
+        "endTime": "19:30"
+      },
+      {
+        "id": "calendarF-1772788919253-3a025d904cc328",
+        "title": "Herrar Div 8",
+        "daysOfWeek": [
+          3
+        ],
+        "startTime": "19:30",
+        "endTime": "21:00"
+      },
+      {
+        "id": "calendarF-1772788919253-70ed69ec8d4e7",
+        "title": "Herrar U",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "19:30",
+        "endTime": "21:00"
+      },
+      {
+        "id": "calendarF-1772788919253-ab45b9768bf038",
+        "title": "Damer A",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "18:00",
+        "endTime": "19:30"
+      },
+      {
+        "id": "calendarF-1772788919253-9398d1de38dd88",
+        "title": "P-GUDH",
+        "daysOfWeek": [
+          5
+        ],
+        "startTime": "16:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarF-1772788919253-f3c4d74537fa9",
+        "title": "F-GUDH",
+        "daysOfWeek": [
+          5
+        ],
+        "startTime": "16:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarF-1772792324681-6caeb8486bf2f8",
+        "title": "F13 9️⃣",
+        "daysOfWeek": [
+          6
+        ],
+        "startTime": "10:00",
+        "endTime": "11:30"
+      },
+      {
+        "id": "calendarF-1772792336379-bb9801d0e21b4",
+        "title": "F12 9️⃣",
+        "daysOfWeek": [
+          5
+        ],
+        "startTime": "16:30",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarF-1772792351114-bbfcd9d6392e58",
+        "title": "F12 9️⃣",
+        "daysOfWeek": [
+          3
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarF-1772792353983-3bdc6e690ffb6",
+        "title": "F13 9️⃣",
+        "daysOfWeek": [
+          3
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarF-1772792564880-09bf4b42eb04",
+        "title": "F14 7️⃣",
+        "daysOfWeek": [
+          0
+        ],
+        "startTime": "16:00",
+        "endTime": "17:30"
+      },
+      {
+        "id": "calendarF-1772792572763-33c22ab883163",
+        "title": "P17 5️⃣",
+        "daysOfWeek": [
+          0
+        ],
+        "startTime": "14:00",
+        "endTime": "15:00"
+      },
+      {
+        "id": "calendarF-1772792576675-2bd3e9fb65c56",
+        "title": "P15 7️⃣",
+        "daysOfWeek": [
+          0
+        ],
+        "startTime": "15:00",
+        "endTime": "16:30"
+      },
+      {
+        "id": "calendarF-1772792597536-207d756ed9347",
+        "title": "P15 7️⃣",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "16:00",
+        "endTime": "17:00"
+      },
+      {
+        "id": "calendarF-1772792601196-41351d68d73758",
+        "title": "P17 5️⃣",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "16:00",
+        "endTime": "17:00"
+      },
+      {
+        "id": "calendarF-1772792605776-12332d1cf4f318",
+        "title": "P12 9️⃣",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarF-1772792609690-f3e533b20d993",
+        "title": "P14 7️⃣",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarF-1772792613096-2b36006d182a38",
+        "title": "P16 7️⃣",
+        "daysOfWeek": [
+          4
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarF-1772792620920-9f8a9d908598b8",
+        "title": "F14 7️⃣",
+        "daysOfWeek": [
+          3
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarF-1772792628051-3cab5470d0f27",
+        "title": "F15 7️⃣",
+        "daysOfWeek": [
+          3
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarF-1772792634070-7eeced4b162de",
+        "title": "P13 9️⃣",
+        "daysOfWeek": [
+          2
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarF-1772792637440-96930f5700a89",
+        "title": "P14 7️⃣",
+        "daysOfWeek": [
+          2
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarF-1772792640911-0be9e8388724a8",
+        "title": "P16 7️⃣",
+        "daysOfWeek": [
+          2
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarF-1772792645914-3f51a2bbf9ff48",
+        "title": "F16 7️⃣",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarF-1772792650009-88341e58d94d28",
+        "title": "F17 5️⃣",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      },
+      {
+        "id": "calendarF-1772792659351-3b4a97fb108118",
+        "title": "P12 9️⃣",
+        "daysOfWeek": [
+          1
+        ],
+        "startTime": "17:00",
+        "endTime": "18:00"
+      }
+    ]
+  }
+}

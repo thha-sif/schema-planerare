@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Träningsschema</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.11/index.global.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+
+<body>
+  <div class="page">
+    <div class="layout">
+
+      <div class="main">
+
+        <!-- PDF: alla scheman -->
+        <button class="no-export" id="exportAllPdf">Exportera alla scheman (PDF)</button>
+
+        <button class="no-export" id="exportJson">Exportera JSON</button>
+        <label class="no-export" for="importJson" style="margin-left:10px; cursor:pointer;">
+            Importera JSON
+        </label>
+        <input class="no-export" id="importJson" type="file" accept="application/json" style="display:none;">
+
+        <!-- A-plan (export-wrapper inkluderar header + kalender) -->
+        <div class="plan-export" id="export-calendarA">
+          <h1>A-plan</h1>
+          <div id="calendarA"></div>
+        </div>
+        <button class="reset-btn no-export" data-cal="calendarA">Återställ plan</button>
+        <button class="copy-btn  no-export" data-cal="calendarA">Kopiera plan</button>
+        <button class="export-png no-export" data-cal="calendarA">Exportera PNG</button>
+        <br><br>
+
+        <!-- B-plan -->
+        <div class="plan-export" id="export-calendarB">
+          <h1>B-plan</h1>
+          <div id="calendarB"></div>
+        </div>
+        <button class="reset-btn no-export" data-cal="calendarB">Återställ plan</button>
+        <button class="copy-btn  no-export" data-cal="calendarB">Kopiera plan</button>
+        <button class="export-png no-export" data-cal="calendarB">Exportera PNG</button>
+        <br><br>
+
+        <!-- Skönvik -->
+        <div class="plan-export" id="export-calendarS">
+          <h1>Skönvik</h1>
+          <div id="calendarS"></div>
+        </div>
+        <button class="reset-btn no-export" data-cal="calendarS">Återställ plan</button>
+        <button class="copy-btn  no-export" data-cal="calendarS">Kopiera plan</button>
+        <button class="export-png no-export" data-cal="calendarS">Exportera PNG</button>
+        <br><br>
+
+        <!-- Försäsong A-plan -->
+        <div class="plan-export" id="export-calendarF">
+          <h1>Försäsong A-plan</h1>
+          <div id="calendarF"></div>
+        </div>
+        <button class="reset-btn no-export" data-cal="calendarF">Återställ plan</button>
+        <button class="copy-btn  no-export" data-cal="calendarF">Kopiera plan</button>
+        <button class="export-png no-export" data-cal="calendarF">Exportera PNG</button>
+        <br><br>
+
+      </div>
+
+      <!-- Panelen ska ej med i export -->
+      <aside class="sidebar no-export">
+        <div id="teams"></div>
+      </aside>
+
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

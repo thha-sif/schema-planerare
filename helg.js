@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
   const STORAGE_KEY = "schema-helg-v1";
 
+  const TEAMS = ["Säters IF", "Grön", "Gul", "Klarblå","Lila", "Ljusblå", "Ljusgrön", "Orange", "Röd", "Svart", "Vit"];
+
   let selectedEvent = null;
   let selectedEl = null;
 
@@ -49,8 +51,34 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  function colorFromTitle() {
+  function colorFromTitle(title) {
+    if (title === "Klarblå") return "blue";
+    if (title === "Röd") return "red";
+    if (title === "Gul") return "yellow";
+    if (title === "Orange") return "orange";
+    if (title === "Ljusblå") return "lightblue";
+    if (title === "Grön") return "green";
+    if (title === "Svart") return "black";
+    if (title === "Vit") return "white";
+    if (title === "Lila") return "purple";
+    if (title === "Ljusgrön") return "lightgreen";
     return "#013888";
+  }
+
+  function initTeamsPanel() {
+    const teamsEl = document.getElementById("teams");
+    if (!teamsEl) return;
+    teamsEl.innerHTML = TEAMS.map(name => `<div class="team-item">${name}</div>`).join("");
+
+    new FullCalendar.Draggable(teamsEl, {
+      itemSelector: ".team-item",
+      eventData: function(eventEl) {
+        return {
+          title: eventEl.innerText,
+          duration: "01:00"
+        };
+      }
+    });
   }
 
   // Vi lagrar som "veckomall" även här (fast bara helg)
@@ -73,9 +101,9 @@ document.addEventListener("DOMContentLoaded", () => {
     hiddenDays: [1,2,3,4,5], // döljer mån–fre
 
     slotMinTime: "09:00:00",
-    slotMaxTime: "19:15:00",
-    slotDuration: "00:15:00",
-    snapDuration: "00:15:00",
+    slotMaxTime: "17:10:00",
+    slotDuration: "00:10:00",
+    snapDuration: "00:10:00",
 
     height: "auto",
     contentHeight: "auto",
@@ -157,6 +185,25 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     },
 
+    eventReceive(info) {
+      const start = info.event.start;
+      const end = info.event.end || new Date(start.getTime() + 60 * 60 * 1000);
+
+      const item = {
+        id: makeId(),
+        title: info.event.title,
+        daysOfWeek: [dowFromDate(start)],
+        startTime: timeFromDate(start),
+        endTime: timeFromDate(end)
+      };
+
+      data.push(item);
+      saveEvents(data);
+
+      info.event.remove();
+      calendar.addEvent(item);
+    },
+
     eventContent(arg) {
       const start = arg.event.start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       const end = arg.event.end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -165,8 +212,8 @@ document.addEventListener("DOMContentLoaded", () => {
         html: `
           <div class="ev">
             <b class="ev-title">${arg.event.title}</b>
-            <br><br>
-            <span class="ev-time">${start}-<br>${end}</span>
+            <br>
+            <span class="ev-time">${start} - ${end}</span>
           </div>
         `
       };
@@ -174,6 +221,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   calendar.render();
+
+  initTeamsPanel();
 
   // DEL/BACKSPACE: ta bort markerat
   document.addEventListener("keydown", (e) => {

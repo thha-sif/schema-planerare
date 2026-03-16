@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Helgplanering</title>
+  <title>Skapa spelschema</title>
 
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
@@ -15,19 +15,33 @@
 
 <body>
   <div class="page">
+    <div class="layout">
+      <div class="main">
 
-    <h1 class="weekend-title">Spelschema</h1>
+        <h1 class="weekend-title">Spelschema</h1>
+        <p style="text-align: center;">Dra i schemat för att skapa eller justera. 
+          Dra direkt från sidopanelen för färger. Dubbelklicka på ett skapat lag för 
+          att ändra namn, tryck DEL för att ta bort det.</p>
 
-    <div class="weekend-actions no-export">
-      <button id="weekendExportPng">Exportera schema (PNG)</button>
-      <button id="weekendClear">Rensa schema</button>
+        <div class="weekend-actions no-export">
+          <button id="weekendExportPng">Exportera som bild</button>
+          <button id="weekendClear">Rensa schema</button>
+        </div>
+
+        <!-- export-wrapper: endast detta fångas vid PNG-export -->
+        <div class="plan-export" id="export-weekend">
+          <div id="weekendCalendar"></div>
+        </div>
+
+      </div>
+
+      <!-- Panelen ska ej med i export -->
+      <aside class="sidebar no-export">
+        Dra färger härifrån till kalendern
+        <div id="teams"></div>
+      </aside>
+
     </div>
-
-    <!-- export-wrapper: endast detta fångas vid PNG-export -->
-    <div class="plan-export" id="export-weekend">
-      <div id="weekendCalendar"></div>
-    </div>
-
   </div>
 
   <script src="helg.js"></script>

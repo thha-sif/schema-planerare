@@ -97,8 +97,8 @@ body{
 }
 
 .sidebar{
-  width: 260px;
-  flex: 0 0 260px;
+  width: 160px;
+  flex: 0 0 160px;
   position: sticky;
   top: 20px;
   background: #ffffff;
@@ -137,15 +137,18 @@ body{
   height: auto !important;
 }
 
+/* Matches needs fixed calendar height based on viewport. */
+.matches-page .fc .fc-scroller,
+.matches-page .fc .fc-scroller-liquid-absolute,
+.matches-page .fc .fc-timegrid-body {
+  height: 100% !important;
+  max-height: 100% !important;
+}
+
 /* Export-wrappers */
 .plan-export{
   background: #ffffff;
   padding: 0;
-}
-
-/* Element som aldrig ska vara med i export */
-.no-export{
-  /* inget här i normal-läge */
 }
 
 /* Centrera rubriker */

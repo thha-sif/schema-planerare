@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Matches</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.11/index.global.min.js"></script>
+</head>
+
+<body class="matches-page">
+  <div class="page">
+    <div class="layout">
+
+      <div class="main">
+        <button class="no-export" id="exportJson">Exportera JSON</button>
+        <label class="no-export" for="importJson" style="margin-left:10px; cursor:pointer;">
+          Importera JSON
+        </label>
+        <input class="no-export" id="importJson" type="file" accept="application/json" style="display:none;">
+
+        <div class="plan-export" id="export-calendarMatches">
+          <div id="calendarMatches"></div>
+        </div>
+        <button class="reset-btn no-export" data-cal="calendarMatches">Återställ plan</button>
+
+      </div>
+
+      <aside class="sidebar no-export">
+        <div id="teams"></div>
+      </aside>
+
+    </div>
+  </div>
+
+  <script src="matches.js"></script>
+</body>
+</html>

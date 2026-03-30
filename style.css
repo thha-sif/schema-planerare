@@ -23,8 +23,24 @@ body{
   font-size: 14px;
 }
 
+.ev {
+  white-space: normal;
+}
+
 .ev-title {
-  font-size: 15px;   /* lite större än tiden */
+  display: block;
+  font-size: 14px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.05;
+  margin-bottom: 2px;
+}
+
+.ev-time {
+  display: block;
+  white-space: nowrap;
+  font-size: 13px;
 }
 
 /* Ta bort highlight på nuvarande dag */
@@ -128,21 +144,6 @@ body{
 
 .team-item:active{
   cursor: grabbing;
-}
-
-/* Ta bort extra tom höjd i timeGrid */
-.fc .fc-scroller,
-.fc .fc-scroller-liquid-absolute,
-.fc .fc-timegrid-body {
-  height: auto !important;
-}
-
-/* Matches needs fixed calendar height based on viewport. */
-.matches-page .fc .fc-scroller,
-.matches-page .fc .fc-scroller-liquid-absolute,
-.matches-page .fc .fc-timegrid-body {
-  height: 100% !important;
-  max-height: 100% !important;
 }
 
 /* Export-wrappers */

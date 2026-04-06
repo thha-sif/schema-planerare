@@ -4,23 +4,21 @@
   <meta charset="utf-8">
   <title>Träningsschema</title>
 
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="assets/css/style.css">
 
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.11/index.global.min.js"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 
 <body>
+  <div data-banner-root data-page-key="training" data-schedule-type="Träningsschema"></div>
+
   <div class="page">
     <div class="layout">
 
       <div class="main">
-
-        <!-- PDF: alla scheman -->
         <button class="no-export" id="exportAllPdf">Exportera alla scheman (PDF)</button>
 
         <button class="no-export" id="exportJson">Exportera JSON</button>
@@ -29,7 +27,6 @@
         </label>
         <input class="no-export" id="importJson" type="file" accept="application/json" style="display:none;">
 
-        <!-- A-plan (export-wrapper inkluderar header + kalender) -->
         <div class="plan-export" id="export-calendarA">
           <h1>A-plan</h1>
           <div id="calendarA"></div>
@@ -39,7 +36,6 @@
         <button class="export-png no-export" data-cal="calendarA">Exportera PNG</button>
         <br><br>
 
-        <!-- B-plan -->
         <div class="plan-export" id="export-calendarB">
           <h1>B-plan</h1>
           <div id="calendarB"></div>
@@ -49,7 +45,6 @@
         <button class="export-png no-export" data-cal="calendarB">Exportera PNG</button>
         <br><br>
 
-        <!-- Skönvik -->
         <div class="plan-export" id="export-calendarS">
           <h1>Skönvik</h1>
           <div id="calendarS"></div>
@@ -59,7 +54,6 @@
         <button class="export-png no-export" data-cal="calendarS">Exportera PNG</button>
         <br><br>
 
-        <!-- Försäsong A-plan -->
         <div class="plan-export" id="export-calendarF">
           <h1>Försäsong A-plan</h1>
           <div id="calendarF"></div>
@@ -70,8 +64,6 @@
         <br><br>
 
       </div>
-
-      <!-- Panelen ska ej med i export -->
       <aside class="sidebar no-export">
         <div id="teams"></div>
       </aside>
@@ -79,6 +71,7 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="assets/js/banner.js"></script>
+  <script src="assets/js/script.js"></script>
 </body>
 </html>

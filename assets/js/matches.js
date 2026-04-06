@@ -62,6 +62,64 @@ document.addEventListener("DOMContentLoaded", () => {
     return "#6B7280";
   }
 
+  function colorFromFacility(facility) {
+    const value = String(facility || "").trim();
+
+    if (value === "Skönviks IP") {
+      return {
+        bg: "#f0e6cd"
+      };
+    }
+
+    if (value === "Säters IP A-plan") {
+      return {
+        bg: "#e2f0e3"
+      };
+    }
+
+    return null;
+  }
+
+  function backgroundFromEvent(ev) {
+    if (!ev) return "";
+
+    if (ev.extendedProps && ev.extendedProps.noFixedTime) {
+      return "#FEE2E2";
+    }
+
+    const facilityColors = colorFromFacility(ev.extendedProps && ev.extendedProps.facility);
+    return facilityColors ? facilityColors.bg : "";
+  }
+
+  function normalizeFacilityChoice(value) {
+    const raw = String(value || "").trim().toLowerCase();
+
+    if (!raw || raw === "0" || raw === "null" || raw === "ingen" || raw === "none") return "";
+    if (raw === "1" || raw === "skönviks ip") return "Skönviks IP";
+    if (raw === "2" || raw === "säters ip a-plan") return "Säters IP A-plan";
+
+    return null;
+  }
+
+  function facilityPromptDefaultValue(facility) {
+    if (facility === "Skönviks IP") return "1";
+    if (facility === "Säters IP A-plan") return "2";
+    return "0";
+  }
+
+  function applyEventColors(ev, el) {
+    if (!el || !ev) return;
+
+    el.style.setProperty("--stripe-color", colorFromTitle(ev.title));
+
+    const bgColor = backgroundFromEvent(ev);
+    if (bgColor) {
+      el.style.setProperty("background-color", bgColor, "important");
+    } else {
+      el.style.removeProperty("background-color");
+    }
+  }
+
   function clearSelection() {
     if (selectedEl) {
       selectedEl.style.outline = "";
@@ -95,13 +153,32 @@ document.addEventListener("DOMContentLoaded", () => {
     const newTitle = prompt("Redigera lagnamn", ev.title);
     if (newTitle === null) return;
 
+    const currentFacility = (ev.extendedProps && ev.extendedProps.facility) || "";
+    const facilityInput = prompt(
+      "Anläggning: 0 = Säters IP B-plan, 1 = Skönviks IP, 2 = Säters IP A-plan",
+      facilityPromptDefaultValue(currentFacility)
+    );
+    if (facilityInput === null) return;
+
+    const newFacility = normalizeFacilityChoice(facilityInput);
+    if (newFacility === null) {
+      alert("Ogiltigt val av anläggning. Använd 1, 2 eller 0.");
+      return;
+    }
+
     ev.setProp("title", newTitle);
+    ev.setExtendedProp("facility", newFacility);
+    ev.setExtendedProp("noFixedTime", false);
 
     const key = eventKey(ev);
     const item = schedules[calId].find((x) => x.id === key);
-    if (item) item.title = newTitle;
+    if (item) {
+      item.title = newTitle;
+      item.facility = newFacility;
+      item.noFixedTime = false;
+    }
 
-    if (el) el.style.setProperty("--stripe-color", colorFromTitle(newTitle));
+    applyEventColors(ev, el);
 
     saveSchedules();
   }
@@ -148,13 +225,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       allDaySlot: false,
 
-      slotMinTime: "09:00:00",
+      slotMinTime: "08:00:00",
       slotMaxTime: "21:30:00",
       slotDuration: "00:30:00",
       snapDuration: "00:30:00",
 
       height: initialHeight,
-      expandRows: false,
+      expandRows: true,
 
       editable: true,
       selectable: true,
@@ -206,6 +283,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         item.start = info.event.start.toISOString();
         item.end = info.event.end.toISOString();
+        item.noFixedTime = false;
+
+        info.event.setExtendedProp("noFixedTime", false);
+        applyEventColors(info.event, info.el);
 
         saveSchedules();
       },
@@ -220,7 +301,7 @@ document.addEventListener("DOMContentLoaded", () => {
       },
 
       eventDidMount(info) {
-        info.el.style.setProperty("--stripe-color", colorFromTitle(info.event.title));
+        applyEventColors(info.event, info.el);
 
         const key = eventKey(info.event);
         if (selectedKey && selectedCalendarId === id && key === selectedKey) {
@@ -246,12 +327,15 @@ document.addEventListener("DOMContentLoaded", () => {
       eventContent(arg) {
         const start = arg.event.start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
         const end = arg.event.end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        const titleHtml = String(arg.event.title || "")
+          .split(" - ")
+          .map((part) => part.trim())
+          .join("<br>");
 
         return {
           html: `
             <div class="ev">
-              <b class="ev-title">${arg.event.title}</b>
-              <br>
+              <b class="ev-title">${titleHtml}</b>
               <span class="ev-time">${start}-${end}</span>
             </div>
           `
@@ -268,8 +352,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
     const top = Math.max(rect.top, 0);
     const bottomSpacing = 16;
-    const minHeight = 460;
-    return Math.max(Math.floor(viewportHeight - top - bottomSpacing), minHeight);
+    const extraTrim = 110;
+    const minHeight = 380;
+    return Math.max(Math.floor(viewportHeight - top - bottomSpacing - extraTrim), minHeight);
   }
 
   function fitCalendarToViewport(calendar, id) {
@@ -361,6 +446,185 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
+  function normalizeHeaderName(value) {
+    return String(value || "").replace(/^\uFEFF/, "").trim().toLowerCase();
+  }
+
+  function detectCsvDelimiter(text) {
+    const firstLine = String(text || "").split(/\r?\n/, 1)[0] || "";
+    const candidates = [";", ",", "\t"];
+
+    let winner = ";";
+    let bestCount = -1;
+    for (const delim of candidates) {
+      const count = firstLine.split(delim).length;
+      if (count > bestCount) {
+        bestCount = count;
+        winner = delim;
+      }
+    }
+
+    return winner;
+  }
+
+  function splitCsvLine(line, delimiter) {
+    const out = [];
+    let cur = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i += 1) {
+      const ch = line[i];
+
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          cur += '"';
+          i += 1;
+        } else {
+          inQuotes = !inQuotes;
+        }
+        continue;
+      }
+
+      if (ch === delimiter && !inQuotes) {
+        out.push(cur.trim());
+        cur = "";
+        continue;
+      }
+
+      cur += ch;
+    }
+
+    out.push(cur.trim());
+    return out;
+  }
+
+  function parseCsvRows(text) {
+    const lines = String(text || "")
+      .split(/\r?\n/)
+      .filter((line) => line.trim().length > 0);
+
+    if (!lines.length) {
+      return { rows: [], missingColumns: [] };
+    }
+
+    const delimiter = detectCsvDelimiter(lines.join("\n"));
+    const headerCells = splitCsvLine(lines[0], delimiter).map((h) => normalizeHeaderName(h));
+
+    const requiredColumns = ["matchnr", "tävling", "hemmalag", "bortalag", "datum / tid", "anläggning"];
+    const missingColumns = requiredColumns.filter((key) => !headerCells.includes(key));
+
+    if (missingColumns.length) {
+      return { rows: [], missingColumns };
+    }
+
+    const rows = [];
+
+    for (let i = 1; i < lines.length; i += 1) {
+      const cells = splitCsvLine(lines[i], delimiter);
+      const row = {};
+
+      for (let c = 0; c < headerCells.length; c += 1) {
+        const key = headerCells[c];
+        if (!key) continue;
+        row[key] = (cells[c] || "").trim();
+      }
+
+      rows.push(row);
+    }
+
+    return { rows, missingColumns: [] };
+  }
+
+  function parseDateTimeValue(rawValue) {
+    const value = String(rawValue || "").trim();
+    if (!value) return null;
+
+    const noFixedTime = /(Tid\s+ej\s+fastställd)/i.test(value);
+    const defaultTime = "20:00";
+
+    const explicitMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{1,2}):(\d{2})$/);
+    if (explicitMatch) {
+      const [, y, m, d, hh, mm] = explicitMatch;
+      const date = new Date(Number(y), Number(m) - 1, Number(d), Number(hh), Number(mm), 0, 0);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    if (noFixedTime) {
+      const dateOnlyMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (!dateOnlyMatch) return null;
+
+      const [, y, m, d] = dateOnlyMatch;
+      const [hh, mm] = defaultTime.split(":").map(Number);
+      const date = new Date(Number(y), Number(m) - 1, Number(d), hh, mm, 0, 0);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    return null;
+  }
+
+  function durationMinutesFromCompetition(competition) {
+    return /7️⃣/i.test(String(competition || "")) ? 90 : 120;
+  }
+
+  function normalizeCsvToSchedules(rows) {
+    const normalized = clone(defaultSchedules);
+    let skippedRows = 0;
+
+    normalized[CAL_ID] = rows
+      .map((row) => {
+        let competition = String(row["tävling"] || "").trim();
+        competition = competition
+          .replace(/Flickor/g, "F")
+          .replace(/Pojkar/g, "P")
+          .replace(/Division/g, "Div")
+          .replace(/7-m/g, "7️⃣")
+          .replace(/9-m/g, "9️⃣")
+          .replace(/Grp./g, "G");
+        let homeTeam = String(row["hemmalag"] || "").trim();
+        homeTeam = homeTeam
+          .replace(/s IF FK/g, "");
+        let awayTeam = String(row["bortalag"] || "").trim();
+        awayTeam = awayTeam
+          .replace(/IFK /g, "")
+          .replace(/IF /g, "")
+          .slice(0, 8).trim();
+        const facility = String(row["anläggning"] || "").trim();
+        const dateTimeRaw = String(row["datum / tid"] || "").trim();
+        const noFixedTime = /(Tid\s+ej\s+fastställd)/i.test(dateTimeRaw);
+
+        if (!homeTeam || !awayTeam || !facility || !dateTimeRaw) {
+          skippedRows += 1;
+          return null;
+        }
+
+        if (!homeTeam.startsWith("Säter")) {
+          skippedRows += 1;
+          return null;
+        }
+
+        const startDate = parseDateTimeValue(dateTimeRaw);
+        if (!startDate) {
+          skippedRows += 1;
+          return null;
+        }
+
+        const durationMinutes = durationMinutesFromCompetition(competition);
+        const endDate = new Date(startDate.getTime() + durationMinutes * 60 * 1000);
+
+        return {
+          id: makeId(CAL_ID),
+          title: `${competition} - ${homeTeam} - ${awayTeam}`,
+          facility,
+          noFixedTime,
+          start: startDate.toISOString(),
+          end: endDate.toISOString()
+        };
+      })
+      .filter(Boolean);
+
+    return { normalized, skippedRows };
+  }
+
   function normalizeImportedData(parsed) {
     let incoming = null;
 
@@ -382,6 +646,8 @@ document.addEventListener("DOMContentLoaded", () => {
         .map((x) => ({
           id: String(x.id || makeId(id)),
           title: String(x.title || ""),
+          facility: String(x.facility || ""),
+          noFixedTime: Boolean(x.noFixedTime),
           start: String(x.start || ""),
           end: String(x.end || "")
         }))
@@ -449,6 +715,55 @@ document.addEventListener("DOMContentLoaded", () => {
         alert("Kunde inte läsa JSON-filen.");
       } finally {
         importJsonInput.value = "";
+      }
+    });
+  }
+
+  const importCsvInput = document.getElementById("importCsv");
+  if (importCsvInput) {
+    importCsvInput.addEventListener("change", async () => {
+      const file = importCsvInput.files && importCsvInput.files[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const { rows, missingColumns } = parseCsvRows(text);
+
+        if (missingColumns.length) {
+          alert(`CSV saknar obligatoriska kolumner: ${missingColumns.join(", ")}`);
+          importCsvInput.value = "";
+          return;
+        }
+
+        const { normalized, skippedRows } = normalizeCsvToSchedules(rows);
+        const validCount = normalized[CAL_ID].length;
+
+        if (!validCount) {
+          alert("Inga giltiga rader hittades i CSV-filen.");
+          importCsvInput.value = "";
+          return;
+        }
+
+        const confirmText = skippedRows
+          ? `Importera ${validCount} matcher och ersätta nuvarande schema? ${skippedRows} rader hoppades över.`
+          : `Importera ${validCount} matcher och ersätta nuvarande schema?`;
+
+        const ok = confirm(confirmText);
+        if (!ok) {
+          importCsvInput.value = "";
+          return;
+        }
+
+        applyImportedSchedules(normalized);
+
+        const successText = skippedRows
+          ? `Import klar. ${validCount} matcher importerades och ${skippedRows} rader hoppades över.`
+          : `Import klar. ${validCount} matcher importerades.`;
+        alert(successText);
+      } catch {
+        alert("Kunde inte läsa CSV-filen.");
+      } finally {
+        importCsvInput.value = "";
       }
     });
   }

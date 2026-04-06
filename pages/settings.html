@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bannerinställningar</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body class="settings-page">
+  <main class="settings-shell">
+    <h1>Bannerinställningar</h1>
+    <p>Hantera klubbinformation för toppbannern. Dessa värden delas av alla schema-sidor.</p>
+
+    <form id="bannerSettingsForm" class="settings-grid" novalidate>
+      <div class="settings-field">
+        <label for="clubNameInput">Klubbnamn</label>
+        <input id="clubNameInput" name="clubName" type="text" maxlength="60" placeholder="Skriv klubbnamn">
+      </div>
+
+      <div class="settings-color-preview-group">
+        <div class="settings-field">
+          <label for="primaryColorInput">Primärfärg</label>
+          <input id="primaryColorInput" name="primaryColor" type="color" value="#8c8480">
+        </div>
+        <div class="settings-field">
+          <label>Klubblogga</label>
+          <img id="logoPreview" class="settings-logo-preview" alt="Förhandsvisning av logga">
+        </div>
+      </div>
+
+      <div class="settings-field">
+        <label for="logoInput">Ladda upp klubblogga</label>
+        <input id="logoInput" name="clubLogo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif">
+      </div>
+
+      <div class="settings-field">
+        <label for="removeLogoInput">
+          <input id="removeLogoInput" name="removeLogo" type="checkbox">
+          Ta bort nuvarande logga
+        </label>
+      </div>
+
+      <div id="settingsHint" class="settings-hint" aria-live="polite"></div>
+
+      <div class="settings-actions">
+        <button class="is-primary" type="submit">Spara inställningar</button>
+        <button id="resetDefaultsBtn" type="button">Återställ standard</button>
+        <a href="../index.html">Tillbaka till schema</a>
+      </div>
+    </form>
+  </main>
+
+  <script src="../assets/js/banner.js"></script>
+  <script src="../assets/js/settings.js"></script>
+</body>
+</html>

@@ -27,6 +27,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function timeFromDate(d) { return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; }
   function dowFromDate(d) { return d.getDay(); } // 0=sön..6=lör
 
+  function syncEditButtonState() {
+    // Cup page no longer shows a separate edit toolbar button.
+  }
+
   function clearSelection() {
     if (selectedEl) {
       selectedEl.style.outline = "";
@@ -34,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     selectedEvent = null;
     selectedEl = null;
+    syncEditButtonState();
   }
 
   function setSelection(ev, el) {
@@ -48,8 +53,79 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedEl.style.outline = "2px solid #000";
       selectedEl.style.outlineOffset = "1px";
     }
+
+    syncEditButtonState();
   }
 
+  function openEventEditor(ev, el) {
+    if (!ev) return;
+
+    const key = ev.id || (ev._def && ev._def.publicId) || "";
+    const item = data.find((x) => x.id === key);
+    if (!item) return;
+
+    const modal = window.scheduleEventModal;
+    if (!modal || typeof modal.open !== "function") {
+      const newTitle = prompt("Redigera namn", ev.title);
+      if (newTitle === null) return;
+
+      ev.setProp("title", newTitle);
+      item.title = newTitle;
+      if (el) {
+        el.style.setProperty("--stripe-color", eventLockedColor(ev));
+      }
+      saveEvents(data);
+      return;
+    }
+
+    setSelection(ev, el || selectedEl);
+
+    modal.open({
+      dialogTitle: "Redigera aktivitet",
+      showFields: {
+        title: true,
+        startTime: true,
+        endTime: true
+      },
+      values: {
+        title: item.title,
+        startTime: item.startTime,
+        endTime: item.endTime
+      },
+      statusText: "Ändra namn och tider för den markerade aktiviteten.",
+      onSave(nextValues) {
+        if (!nextValues.title) {
+          modal.setStatus("Namn måste fyllas i.");
+          return false;
+        }
+
+        if (!nextValues.startTime || !nextValues.endTime || nextValues.endTime <= nextValues.startTime) {
+          modal.setStatus("Sluttiden måste vara senare än starttiden.");
+          return false;
+        }
+
+        item.title = nextValues.title;
+        item.startTime = nextValues.startTime;
+        item.endTime = nextValues.endTime;
+
+        saveEvents(data);
+        clearSelection();
+        calendar.removeAllEvents();
+        calendar.addEventSource(data);
+      },
+      onDelete() {
+        const idx = data.findIndex((x) => x.id === key);
+        if (idx !== -1) {
+          data.splice(idx, 1);
+        }
+
+        saveEvents(data);
+        clearSelection();
+        calendar.removeAllEvents();
+        calendar.addEventSource(data);
+      }
+    });
+  }
 
   function colorFromTitle(title) {
     if (title === "Blå") return "blue";
@@ -227,6 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
     eventDidMount(info) {
       const stripeColor = eventLockedColor(info.event);
       info.el.style.setProperty("--stripe-color", stripeColor);
+      info.el.tabIndex = 0;
 
       // enkelklick markera
       if (!info.el.dataset.bound) {
@@ -240,18 +317,25 @@ document.addEventListener("DOMContentLoaded", () => {
           e.preventDefault();
           e.stopPropagation();
           setSelection(info.event, info.el);
+          openEventEditor(info.event, info.el);
+        });
 
-          const newTitle = prompt("Redigera namn", info.event.title);
-          if (newTitle === null) return;
+        info.el.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setSelection(info.event, info.el);
 
-          info.event.setProp("title", newTitle);
+          const contextMenu = window.scheduleEventContextMenu;
+          if (contextMenu && typeof contextMenu.show === "function") {
+            contextMenu.show({
+              x: e.clientX,
+              y: e.clientY,
+              onEdit: () => openEventEditor(info.event, info.el)
+            });
+            return;
+          }
 
-          const key = info.event.id || (info.event._def && info.event._def.publicId) || "";
-          const item = data.find(x => x.id === key);
-          if (item) item.title = newTitle;
-
-          info.el.style.setProperty("--stripe-color", eventLockedColor(info.event));
-          saveEvents(data);
+          openEventEditor(info.event, info.el);
         });
       }
     },
@@ -334,18 +418,20 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // DEL/BACKSPACE: ta bort markerat
+  syncEditButtonState();
+
+  // DEL/BACKSPACE: öppna redigering för säker borttagning
   document.addEventListener("keydown", (e) => {
     if (!selectedEvent) return;
     if (e.key !== "Delete" && e.key !== "Backspace") return;
+    if (window.scheduleEventModal && window.scheduleEventModal.isOpen()) return;
 
-    const key = selectedEvent.id || (selectedEvent._def && selectedEvent._def.publicId) || "";
-    const idx = data.findIndex(x => x.id === key);
-    if (idx !== -1) data.splice(idx, 1);
+    e.preventDefault();
+    openEventEditor(selectedEvent, selectedEl);
 
-    selectedEvent.remove();
-    clearSelection();
-    saveEvents(data);
+    if (window.scheduleEventModal && typeof window.scheduleEventModal.setStatus === "function") {
+      window.scheduleEventModal.setStatus("Välj Ta bort i rutan om du vill ta bort aktiviteten.");
+    }
   });
 
   // Klick utanför event: avmarkera

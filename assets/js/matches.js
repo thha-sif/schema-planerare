@@ -46,6 +46,17 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   }
 
+  function pad2(n) {
+    return String(n).padStart(2, "0");
+  }
+
+  function toDateTimeLocalValue(value) {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}T${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+  }
+
   function eventKey(ev) {
     return ev.id || (ev._def && ev._def.publicId) || "";
   }
@@ -120,6 +131,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function syncEditButtonState() {
+    // Matches no longer shows a separate edit toolbar button.
+  }
+
   function clearSelection() {
     if (selectedEl) {
       selectedEl.style.outline = "";
@@ -130,6 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
     selectedCalendarId = null;
     selectedKey = null;
     selectedEl = null;
+    syncEditButtonState();
   }
 
   function setSelection(ev, calId, el) {
@@ -147,40 +163,89 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedEl.style.outline = "2px solid #000000";
       selectedEl.style.outlineOffset = "1px";
     }
+
+    syncEditButtonState();
   }
 
   function editEventTitle(ev, calId, el) {
-    const newTitle = prompt("Redigera lagnamn", ev.title);
-    if (newTitle === null) return;
-
-    const currentFacility = (ev.extendedProps && ev.extendedProps.facility) || "";
-    const facilityInput = prompt(
-      "Anläggning: 0 = Säters IP B-plan, 1 = Skönviks IP, 2 = Säters IP A-plan",
-      facilityPromptDefaultValue(currentFacility)
-    );
-    if (facilityInput === null) return;
-
-    const newFacility = normalizeFacilityChoice(facilityInput);
-    if (newFacility === null) {
-      alert("Ogiltigt val av anläggning. Använd 1, 2 eller 0.");
-      return;
-    }
-
-    ev.setProp("title", newTitle);
-    ev.setExtendedProp("facility", newFacility);
-    ev.setExtendedProp("noFixedTime", false);
+    if (!ev || !calId) return;
 
     const key = eventKey(ev);
     const item = schedules[calId].find((x) => x.id === key);
-    if (item) {
+    if (!item) return;
+
+    const modal = window.scheduleEventModal;
+    if (!modal || typeof modal.open !== "function") {
+      const newTitle = prompt("Redigera lagnamn", ev.title);
+      if (newTitle === null) return;
+
+      ev.setProp("title", newTitle);
       item.title = newTitle;
-      item.facility = newFacility;
-      item.noFixedTime = false;
+      applyEventColors(ev, el);
+      saveSchedules();
+      return;
     }
 
-    applyEventColors(ev, el);
+    setSelection(ev, calId, el || selectedEl);
 
-    saveSchedules();
+    modal.open({
+      dialogTitle: "Redigera match",
+      showFields: {
+        title: true,
+        startDateTime: true,
+        endDateTime: true,
+        facility: true
+      },
+      values: {
+        title: item.title,
+        startDateTime: toDateTimeLocalValue(item.start),
+        endDateTime: toDateTimeLocalValue(item.end),
+        facility: item.facility || ""
+      },
+      statusText: "Uppdatera namn, tid och anläggning för den markerade matchen.",
+      onSave(nextValues) {
+        if (!nextValues.title) {
+          modal.setStatus("Namn måste fyllas i.");
+          return false;
+        }
+
+        const nextStart = new Date(nextValues.startDateTime);
+        const nextEnd = new Date(nextValues.endDateTime);
+
+        if (Number.isNaN(nextStart.getTime()) || Number.isNaN(nextEnd.getTime())) {
+          modal.setStatus("Start och slut måste fyllas i.");
+          return false;
+        }
+
+        if (nextEnd <= nextStart) {
+          modal.setStatus("Sluttiden måste vara senare än starttiden.");
+          return false;
+        }
+
+        ev.setProp("title", nextValues.title);
+        ev.setStart(nextStart);
+        ev.setEnd(nextEnd);
+        ev.setExtendedProp("facility", nextValues.facility || "");
+
+        item.title = nextValues.title;
+        item.start = nextStart.toISOString();
+        item.end = nextEnd.toISOString();
+        item.facility = nextValues.facility || "";
+
+        applyEventColors(ev, el || selectedEl);
+        saveSchedules();
+      },
+      onDelete() {
+        const idx = schedules[calId].findIndex((x) => x.id === key);
+        if (idx !== -1) {
+          schedules[calId].splice(idx, 1);
+        }
+
+        ev.remove();
+        clearSelection();
+        saveSchedules();
+      }
+    });
   }
 
   function initTeamsPanel() {
@@ -302,6 +367,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       eventDidMount(info) {
         applyEventColors(info.event, info.el);
+        info.el.tabIndex = 0;
 
         const key = eventKey(info.event);
         if (selectedKey && selectedCalendarId === id && key === selectedKey) {
@@ -319,6 +385,24 @@ document.addEventListener("DOMContentLoaded", () => {
             e.preventDefault();
             e.stopPropagation();
             setSelection(info.event, id, info.el);
+            editEventTitle(info.event, id, info.el);
+          });
+
+          info.el.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setSelection(info.event, id, info.el);
+
+            const contextMenu = window.scheduleEventContextMenu;
+            if (contextMenu && typeof contextMenu.show === "function") {
+              contextMenu.show({
+                x: e.clientX,
+                y: e.clientY,
+                onEdit: () => editEventTitle(info.event, id, info.el)
+              });
+              return;
+            }
+
             editEventTitle(info.event, id, info.el);
           });
         }
@@ -398,18 +482,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!clickedEvent && !clickedSidebar && !clickedControl) clearSelection();
   });
 
+  syncEditButtonState();
+
   document.addEventListener("keydown", (e) => {
     if (!selectedEvent || !selectedCalendarId) return;
     if (e.key !== "Delete" && e.key !== "Backspace") return;
+    if (window.scheduleEventModal && window.scheduleEventModal.isOpen()) return;
 
-    const key = eventKey(selectedEvent);
-    const list = schedules[selectedCalendarId];
-    const idx = list.findIndex((x) => x.id === key);
-    if (idx !== -1) list.splice(idx, 1);
+    e.preventDefault();
+    editEventTitle(selectedEvent, selectedCalendarId, selectedEl);
 
-    selectedEvent.remove();
-    clearSelection();
-    saveSchedules();
+    if (window.scheduleEventModal && typeof window.scheduleEventModal.setStatus === "function") {
+      window.scheduleEventModal.setStatus("Välj Ta bort i rutan om du vill ta bort matchen.");
+    }
   });
 
   const resetBtn = document.querySelector(`.reset-btn[data-cal="${CAL_ID}"]`);

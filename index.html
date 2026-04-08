@@ -71,7 +71,44 @@
     </div>
   </div>
 
+  <div class="event-modal" data-event-modal hidden>
+    <div class="event-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">
+      <div class="event-modal__header">
+        <h2 id="eventModalTitle" data-event-modal-title>Redigera aktivitet</h2>
+        <button type="button" class="event-modal__icon-btn" data-event-modal-close aria-label="Stäng">×</button>
+      </div>
+
+      <form class="event-modal__form" data-event-modal-form>
+        <div class="event-modal__fields">
+          <label class="event-modal__field" data-field-wrap="title">
+            <span>Namn</span>
+            <input data-field="title" type="text" maxlength="80" required>
+          </label>
+
+          <label class="event-modal__field" data-field-wrap="startTime">
+            <span>Starttid</span>
+            <input data-field="startTime" type="time" required>
+          </label>
+
+          <label class="event-modal__field" data-field-wrap="endTime">
+            <span>Sluttid</span>
+            <input data-field="endTime" type="time" required>
+          </label>
+        </div>
+
+        <p class="event-modal__status" data-event-modal-status aria-live="polite"></p>
+
+        <div class="event-modal__actions">
+          <button type="submit" class="is-primary">Spara</button>
+          <button type="button" class="is-danger" data-event-modal-delete>Ta bort</button>
+          <button type="button" data-event-modal-close>Avbryt</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="assets/js/banner.js"></script>
+  <script src="assets/js/event-modal.js"></script>
   <script src="assets/js/script.js"></script>
 </body>
 </html>

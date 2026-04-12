@@ -16,12 +16,12 @@
     <div class="layout">
 
       <div class="main">
-        <button class="no-export" id="exportJson">Exportera JSON</button>
-        <label class="no-export" for="importJson" style="margin-left:10px; cursor:pointer;">
+        <button class="no-export legacy-toolbar-control" id="exportJson">Exportera JSON</button>
+        <label class="no-export legacy-toolbar-control" for="importJson" style="margin-left:10px; cursor:pointer;">
           Importera JSON
         </label>
         <input class="no-export" id="importJson" type="file" accept="application/json" style="display:none;">
-        <label class="no-export" for="importCsv" style="margin-left:10px; cursor:pointer;">
+        <label class="no-export legacy-toolbar-control" for="importCsv" style="margin-left:10px; cursor:pointer;">
           Importera CSV
         </label>
         <input class="no-export" id="importCsv" type="file" accept=".csv,text/csv,.txt" style="display:none;">
@@ -29,7 +29,7 @@
         <div class="plan-export" id="export-calendarMatches">
           <div id="calendarMatches"></div>
         </div>
-        <button class="reset-btn no-export" data-cal="calendarMatches">Återställ plan</button>
+        <button class="reset-btn no-export legacy-toolbar-control" data-cal="calendarMatches">Återställ plan</button>
 
       </div>
 
@@ -49,9 +49,19 @@
 
       <form class="event-modal__form" data-event-modal-form>
         <div class="event-modal__fields">
-          <label class="event-modal__field" data-field-wrap="title">
-            <span>Namn</span>
-            <input data-field="title" type="text" maxlength="120" required>
+          <label class="event-modal__field" data-field-wrap="competition">
+            <span>Tävling</span>
+            <input data-field="competition" type="text" maxlength="80" required>
+          </label>
+
+          <label class="event-modal__field" data-field-wrap="homeTeam">
+            <span>Hemmalag</span>
+            <input data-field="homeTeam" type="text" maxlength="80" required>
+          </label>
+
+          <label class="event-modal__field" data-field-wrap="awayTeam">
+            <span>Bortalag</span>
+            <input data-field="awayTeam" type="text" maxlength="80" required>
           </label>
 
           <label class="event-modal__field" data-field-wrap="startDateTime">
@@ -67,9 +77,10 @@
           <label class="event-modal__field" data-field-wrap="facility">
             <span>Anläggning</span>
             <select data-field="facility">
-              <option value="">Säters IP B-plan</option>
-              <option value="Skönviks IP">Skönviks IP</option>
+              <option value="">Ingen anläggning</option>
               <option value="Säters IP A-plan">Säters IP A-plan</option>
+              <option value="Säters IP B-plan">Säters IP B-plan</option>
+              <option value="Skönviks IP">Skönviks IP</option>              
             </select>
           </label>
         </div>
@@ -86,6 +97,7 @@
   </div>
 
   <script src="../assets/js/banner.js"></script>
+  <script src="../assets/js/history.js"></script>
   <script src="../assets/js/event-modal.js"></script>
   <script src="../assets/js/matches.js"></script>
 </body>

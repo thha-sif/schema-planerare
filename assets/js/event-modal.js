@@ -11,6 +11,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const fieldWraps = {
     title: root.querySelector('[data-field-wrap="title"]'),
+    competition: root.querySelector('[data-field-wrap="competition"]'),
+    homeTeam: root.querySelector('[data-field-wrap="homeTeam"]'),
+    awayTeam: root.querySelector('[data-field-wrap="awayTeam"]'),
     startTime: root.querySelector('[data-field-wrap="startTime"]'),
     endTime: root.querySelector('[data-field-wrap="endTime"]'),
     startDateTime: root.querySelector('[data-field-wrap="startDateTime"]'),
@@ -20,6 +23,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const fields = {
     title: root.querySelector('[data-field="title"]'),
+    competition: root.querySelector('[data-field="competition"]'),
+    homeTeam: root.querySelector('[data-field="homeTeam"]'),
+    awayTeam: root.querySelector('[data-field="awayTeam"]'),
     startTime: root.querySelector('[data-field="startTime"]'),
     endTime: root.querySelector('[data-field="endTime"]'),
     startDateTime: root.querySelector('[data-field="startDateTime"]'),
@@ -38,6 +44,88 @@ document.addEventListener("DOMContentLoaded", () => {
   document.body.appendChild(contextMenuEl);
 
   const contextMenuEditBtn = contextMenuEl.querySelector(".event-context-menu__button");
+
+  const deleteConfirmEl = document.createElement("div");
+  deleteConfirmEl.className = "event-delete-confirm";
+  deleteConfirmEl.hidden = true;
+  deleteConfirmEl.innerHTML = `
+    <span class="event-delete-confirm__label">Ta bort aktiviteten?</span>
+    <div class="event-delete-confirm__actions">
+      <button type="button" class="event-delete-confirm__yes">Ta bort</button>
+      <button type="button" class="event-delete-confirm__no">Avbryt</button>
+    </div>
+  `;
+  document.body.appendChild(deleteConfirmEl);
+
+  const deleteConfirmYesBtn = deleteConfirmEl.querySelector(".event-delete-confirm__yes");
+  const deleteConfirmNoBtn = deleteConfirmEl.querySelector(".event-delete-confirm__no");
+  const deleteConfirmLabelEl = deleteConfirmEl.querySelector(".event-delete-confirm__label");
+  let deleteConfirmCallback = null;
+
+  function hideDeleteConfirm() {
+    deleteConfirmEl.hidden = true;
+    deleteConfirmCallback = null;
+  }
+
+  function showDeleteConfirm({ targetEl, onConfirm, label, confirmLabel, cancelLabel }) {
+    if (typeof onConfirm !== "function") return;
+    hideContextMenu();
+    deleteConfirmCallback = onConfirm;
+    if (deleteConfirmLabelEl) {
+      deleteConfirmLabelEl.textContent = label || "Ta bort aktiviteten?";
+    }
+    if (deleteConfirmYesBtn) {
+      deleteConfirmYesBtn.textContent = confirmLabel || "Ta bort";
+    }
+    if (deleteConfirmNoBtn) {
+      deleteConfirmNoBtn.textContent = cancelLabel || "Avbryt";
+    }
+    deleteConfirmEl.hidden = false;
+    deleteConfirmEl.style.left = "0px";
+    deleteConfirmEl.style.top = "0px";
+
+    requestAnimationFrame(() => {
+      const margin = 8;
+      const confirmRect = deleteConfirmEl.getBoundingClientRect();
+      const sourceRect = (targetEl && typeof targetEl.getBoundingClientRect === "function")
+        ? targetEl.getBoundingClientRect()
+        : { left: window.innerWidth / 2, bottom: window.innerHeight / 2, top: window.innerHeight / 2 };
+
+      let top = sourceRect.bottom + margin;
+      if (top + confirmRect.height > window.innerHeight - margin) {
+        top = sourceRect.top - confirmRect.height - margin;
+      }
+      top = Math.max(margin, Math.min(top, window.innerHeight - confirmRect.height - margin));
+
+      let left = sourceRect.left;
+      left = Math.max(margin, Math.min(left, window.innerWidth - confirmRect.width - margin));
+
+      deleteConfirmEl.style.left = `${left}px`;
+      deleteConfirmEl.style.top = `${top}px`;
+
+      deleteConfirmYesBtn.focus();
+    });
+  }
+
+  if (deleteConfirmYesBtn) {
+    deleteConfirmYesBtn.addEventListener("click", () => {
+      const cb = deleteConfirmCallback;
+      hideDeleteConfirm();
+      if (typeof cb === "function") cb();
+    });
+  }
+
+  if (deleteConfirmNoBtn) {
+    deleteConfirmNoBtn.addEventListener("click", () => {
+      hideDeleteConfirm();
+    });
+  }
+
+  document.addEventListener("click", (event) => {
+    if (!deleteConfirmEl.hidden && !deleteConfirmEl.contains(event.target)) {
+      hideDeleteConfirm();
+    }
+  });
 
   function hideContextMenu() {
     contextMenuEl.hidden = true;
@@ -97,19 +185,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function syncTitleFieldTooltip() {
+    if (!fields.title) return;
+    fields.title.title = fields.title.value || "";
+  }
+
   function fillValues(values) {
     const next = values || {};
     if (fields.title) fields.title.value = next.title || "";
+    if (fields.competition) fields.competition.value = next.competition || "";
+    if (fields.homeTeam) fields.homeTeam.value = next.homeTeam || "";
+    if (fields.awayTeam) fields.awayTeam.value = next.awayTeam || "";
     if (fields.startTime) fields.startTime.value = next.startTime || "";
     if (fields.endTime) fields.endTime.value = next.endTime || "";
     if (fields.startDateTime) fields.startDateTime.value = next.startDateTime || "";
     if (fields.endDateTime) fields.endDateTime.value = next.endDateTime || "";
     if (fields.facility) fields.facility.value = next.facility || "";
+    syncTitleFieldTooltip();
   }
 
   function collectValues() {
     return {
       title: fields.title ? fields.title.value.trim() : "",
+      competition: fields.competition ? fields.competition.value.trim() : "",
+      homeTeam: fields.homeTeam ? fields.homeTeam.value.trim() : "",
+      awayTeam: fields.awayTeam ? fields.awayTeam.value.trim() : "",
       startTime: fields.startTime ? fields.startTime.value : "",
       endTime: fields.endTime ? fields.endTime.value : "",
       startDateTime: fields.startDateTime ? fields.startDateTime.value : "",
@@ -133,6 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function closeModal() {
     root.hidden = true;
     document.body.classList.remove("has-modal-open");
+    document.body.style.paddingRight = "";
     resetDeleteState();
     hideContextMenu();
     setStatus("");
@@ -167,6 +268,8 @@ document.addEventListener("DOMContentLoaded", () => {
       deleteBtn.textContent = deleteLabel;
     }
 
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.paddingRight = scrollbarWidth > 0 ? `${scrollbarWidth}px` : "";
     root.hidden = false;
     document.body.classList.add("has-modal-open");
     resetDeleteState();
@@ -212,6 +315,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
+      if (!deleteConfirmEl.hidden) {
+        hideDeleteConfirm();
+        return;
+      }
+
       if (!contextMenuEl.hidden) {
         hideContextMenu();
       }
@@ -241,6 +349,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  if (fields.title) {
+    fields.title.addEventListener("input", syncTitleFieldTooltip);
+    fields.title.addEventListener("change", syncTitleFieldTooltip);
+  }
+
   if (deleteBtn) {
     deleteBtn.addEventListener("click", () => {
       if (!activeConfig || typeof activeConfig.onDelete !== "function") return;
@@ -268,7 +381,8 @@ document.addEventListener("DOMContentLoaded", () => {
     hide: hideContextMenu,
     isOpen() {
       return !contextMenuEl.hidden;
-    }
+    },
+    confirmDelete: showDeleteConfirm
   };
 
   window.scheduleEventModal = {

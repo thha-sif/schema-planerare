@@ -5,6 +5,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let selectedEvent = null;
   let selectedEl = null;
+  let data = [];
+  const eventElements = new Map();
 
   function loadEvents() {
     try {
@@ -17,6 +19,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function saveEvents(events) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+  }
+
+  function snapshotData() {
+    return JSON.parse(JSON.stringify(data));
+  }
+
+  function applyDataState(nextData) {
+    data = Array.isArray(nextData) ? JSON.parse(JSON.stringify(nextData)) : [];
+    saveEvents(data);
+    clearSelection();
+    if (calendar) {
+      calendar.removeAllEvents();
+      calendar.addEventSource(data);
+    }
+  }
+
+  const history = window.scheduleHistory && typeof window.scheduleHistory.createManager === "function"
+    ? window.scheduleHistory.createManager({
+      applyState: applyDataState,
+      onStateChange(state) {
+        document.dispatchEvent(new CustomEvent("schedule:history-state", { detail: state }));
+      }
+    })
+    : null;
+
+  function recordHistory(beforeState) {
+    if (!history) return;
+    history.record(beforeState, snapshotData());
   }
 
   function makeId() {
@@ -94,6 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
       },
       statusText: "Ändra namn och tider för den markerade aktiviteten.",
       onSave(nextValues) {
+        const beforeState = snapshotData();
         if (!nextValues.title) {
           modal.setStatus("Namn måste fyllas i.");
           return false;
@@ -112,8 +143,10 @@ document.addEventListener("DOMContentLoaded", () => {
         clearSelection();
         calendar.removeAllEvents();
         calendar.addEventSource(data);
+        recordHistory(beforeState);
       },
       onDelete() {
+        const beforeState = snapshotData();
         const idx = data.findIndex((x) => x.id === key);
         if (idx !== -1) {
           data.splice(idx, 1);
@@ -123,6 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
         clearSelection();
         calendar.removeAllEvents();
         calendar.addEventSource(data);
+        recordHistory(beforeState);
       }
     });
   }
@@ -154,6 +188,49 @@ document.addEventListener("DOMContentLoaded", () => {
       return "#000000";
     }
     return "#ffffff";
+  }
+
+  function normalizeSearchText(value) {
+    return String(value || "").toLowerCase().trim();
+  }
+
+  function scoreCupSearch(title, needle) {
+    const haystack = normalizeSearchText(title);
+    if (!haystack || !needle) return -1;
+    if (haystack === needle) return 360;
+    if (haystack.startsWith(needle)) return 260;
+    const wordIndex = haystack.indexOf(` ${needle}`);
+    if (wordIndex !== -1) return 180 - wordIndex;
+    const containsIndex = haystack.indexOf(needle);
+    if (containsIndex !== -1) return 100 - containsIndex;
+    return -1;
+  }
+
+  function focusSearchResult(resultId) {
+    const event = calendar && calendar.getEventById(resultId);
+    const eventEl = eventElements.get(resultId);
+    const wrapper = document.getElementById("export-weekend");
+
+    if (wrapper) {
+      wrapper.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    if (!event || !eventEl) return false;
+
+    setSelection(event, eventEl);
+    eventEl.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    eventEl.focus({ preventScroll: true });
+    return true;
+  }
+
+  function editSearchResult(resultId) {
+    const event = calendar && calendar.getEventById(resultId);
+    const eventEl = eventElements.get(resultId);
+    if (!event || !eventEl) return false;
+
+    setSelection(event, eventEl);
+    openEventEditor(event, eventEl);
+    return true;
   }
 
   function initTeamsPanel() {
@@ -219,7 +296,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return safeB - safeA;
   }
 
-  let data = loadEvents();
+  data = loadEvents();
   if (ensureLockedColors(data)) {
     saveEvents(data);
   }
@@ -227,7 +304,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initTeamsPanel();
 
   const calendarEl = document.getElementById("weekendCalendar");
-  const initialHeight = getViewportCalendarHeight(calendarEl);
 
   const calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: "timeGridWeek",
@@ -246,37 +322,88 @@ document.addEventListener("DOMContentLoaded", () => {
     slotMaxTime: "17:10:00",
     slotDuration: "00:10:00",
     snapDuration: "00:10:00",
-
-    height: initialHeight,
+    
+    height: "100%",
     expandRows: true,
 
     editable: true,
     selectable: true,
     selectMirror: true,
+    dragScroll: true,
     slotEventOverlap: true,
 
     events: data,
 
     select(info) {
-      const title = prompt("Namn");
-      if (!title) return;
+      const initialStartTime = timeFromDate(info.start);
+      const initialEndTime = timeFromDate(info.end);
+      const modal = window.scheduleEventModal;
 
-      const item = {
-        id: makeId(),
-        title,
-        lockedColor: colorFromTitle(title),
-        droppedAt: currentDropStamp(),
-        daysOfWeek: [dowFromDate(info.start)],
-        startTime: timeFromDate(info.start),
-        endTime: timeFromDate(info.end)
-      };
+      if (!modal || typeof modal.open !== "function") {
+        const title = prompt("Namn");
+        if (!title) return;
 
-      data.push(item);
-      calendar.addEvent(item);
-      saveEvents(data);
+        const item = {
+          id: makeId(),
+          title,
+          lockedColor: colorFromTitle(title),
+          droppedAt: currentDropStamp(),
+          daysOfWeek: [dowFromDate(info.start)],
+          startTime: initialStartTime,
+          endTime: initialEndTime
+        };
+
+        data.push(item);
+        calendar.addEvent(item);
+        saveEvents(data);
+        return;
+      }
+
+      modal.open({
+        dialogTitle: "Ny aktivitet",
+        showFields: {
+          title: true,
+          startTime: true,
+          endTime: true
+        },
+        values: {
+          title: "",
+          startTime: initialStartTime,
+          endTime: initialEndTime
+        },
+        statusText: "Ange namn och tider för den nya aktiviteten.",
+        onSave(nextValues) {
+          const beforeState = snapshotData();
+          if (!nextValues.title) {
+            modal.setStatus("Namn måste fyllas i.");
+            return false;
+          }
+
+          if (!nextValues.startTime || !nextValues.endTime || nextValues.endTime <= nextValues.startTime) {
+            modal.setStatus("Sluttiden måste vara senare än starttiden.");
+            return false;
+          }
+
+          const item = {
+            id: makeId(),
+            title: nextValues.title,
+            lockedColor: colorFromTitle(nextValues.title),
+            droppedAt: currentDropStamp(),
+            daysOfWeek: [dowFromDate(info.start)],
+            startTime: nextValues.startTime,
+            endTime: nextValues.endTime
+          };
+
+          data.push(item);
+          calendar.addEvent(item);
+          saveEvents(data);
+          recordHistory(beforeState);
+        }
+      });
     },
 
     eventDrop(info) {
+      const beforeState = snapshotData();
       const key = info.event.id || (info.event._def && info.event._def.publicId) || "";
       const item = data.find(x => x.id === key);
       if (!item) return;
@@ -289,21 +416,25 @@ document.addEventListener("DOMContentLoaded", () => {
       info.event.setExtendedProp("droppedAt", item.droppedAt);
 
       saveEvents(data);
+      recordHistory(beforeState);
     },
 
     eventResize(info) {
+      const beforeState = snapshotData();
       const key = info.event.id || (info.event._def && info.event._def.publicId) || "";
       const item = data.find(x => x.id === key);
       if (!item) return;
 
       item.endTime = timeFromDate(info.event.end);
       saveEvents(data);
+      recordHistory(beforeState);
     },
 
     eventDidMount(info) {
       const stripeColor = eventLockedColor(info.event);
       info.el.style.setProperty("--stripe-color", stripeColor);
       info.el.tabIndex = 0;
+      eventElements.set(info.event.id || (info.event._def && info.event._def.publicId) || "", info.el);
 
       // enkelklick markera
       if (!info.el.dataset.bound) {
@@ -341,6 +472,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
 
     eventReceive(info) {
+      const beforeState = snapshotData();
       const start = info.event.start;
       const end = info.event.end || new Date(start.getTime() + 60 * 60 * 1000);
 
@@ -359,6 +491,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       info.event.remove();
       calendar.addEvent(item);
+      recordHistory(beforeState);
     },
 
     eventContent(arg) {
@@ -381,43 +514,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   calendar.render();
 
-  function getViewportCalendarHeight(el) {
-    if (!el) return 420;
-
-    const rect = el.getBoundingClientRect();
-    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-    const top = Math.max(rect.top, 0);
-    const bottomSpacing = 8;
-    const minHeight = 420;
-
-    return Math.max(Math.floor(viewportHeight - top - bottomSpacing), minHeight);
-  }
-
-  function fitCalendarToViewport(currentCalendar) {
-    if (!currentCalendar || !calendarEl) return;
-
-    const nextHeight = getViewportCalendarHeight(calendarEl);
-    calendarEl.style.height = `${nextHeight}px`;
-    currentCalendar.setOption("height", nextHeight);
-    currentCalendar.updateSize();
-  }
-
-  requestAnimationFrame(() => {
-    fitCalendarToViewport(calendar);
-  });
-
-  window.addEventListener("load", () => {
-    fitCalendarToViewport(calendar);
-  });
-
-  let resizeRaf = 0;
-  window.addEventListener("resize", () => {
-    if (resizeRaf) cancelAnimationFrame(resizeRaf);
-    resizeRaf = requestAnimationFrame(() => {
-      fitCalendarToViewport(calendar);
-    });
-  });
-
   syncEditButtonState();
 
   // DEL/BACKSPACE: öppna redigering för säker borttagning
@@ -427,10 +523,26 @@ document.addEventListener("DOMContentLoaded", () => {
     if (window.scheduleEventModal && window.scheduleEventModal.isOpen()) return;
 
     e.preventDefault();
-    openEventEditor(selectedEvent, selectedEl);
 
-    if (window.scheduleEventModal && typeof window.scheduleEventModal.setStatus === "function") {
-      window.scheduleEventModal.setStatus("Välj Ta bort i rutan om du vill ta bort aktiviteten.");
+    const contextMenu = window.scheduleEventContextMenu;
+    if (contextMenu && typeof contextMenu.confirmDelete === "function") {
+      const key = selectedEvent.id || (selectedEvent._def && selectedEvent._def.publicId) || "";
+      const el = selectedEl;
+      contextMenu.confirmDelete({
+        targetEl: el,
+        onConfirm() {
+          const beforeState = snapshotData();
+          const idx = data.findIndex((x) => x.id === key);
+          if (idx !== -1) data.splice(idx, 1);
+          saveEvents(data);
+          clearSelection();
+          calendar.removeAllEvents();
+          calendar.addEventSource(data);
+          recordHistory(beforeState);
+        }
+      });
+    } else {
+      openEventEditor(selectedEvent, selectedEl);
     }
   });
 
@@ -442,13 +554,21 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("weekendClear").addEventListener("click", () => {
-    const ok = confirm("Rensa schemat och börja från noll?");
+    const beforeState = snapshotData();
+    const clearBtn = document.getElementById("weekendClear");
+    const skipConfirm = clearBtn && clearBtn.dataset.resetConfirmed === "true";
+    if (clearBtn) {
+      clearBtn.dataset.resetConfirmed = "false";
+    }
+
+    const ok = skipConfirm ? true : confirm("Rensa schemat och börja från noll?");
     if (!ok) return;
 
     data = [];
     saveEvents(data);
     clearSelection();
     calendar.removeAllEvents();
+    recordHistory(beforeState);
   });
 
   // Export PNG (endast export-wrapper)
@@ -480,4 +600,49 @@ document.addEventListener("DOMContentLoaded", () => {
     const stamp = `${date.getFullYear()}-${pad2(date.getMonth()+1)}-${pad2(date.getDate())}`;
     downloadDataUrl(dataUrl, `${safeFilename("Helgschema")}-${stamp}.png`);
   });
+
+  document.addEventListener("schedule:undo-request", (event) => {
+    if (!history) return;
+    if (event && event.detail && typeof event.detail === "object") {
+      event.detail.handled = true;
+    }
+    history.undo();
+  });
+
+  document.addEventListener("schedule:redo-request", (event) => {
+    if (!history) return;
+    if (event && event.detail && typeof event.detail === "object") {
+      event.detail.handled = true;
+    }
+    history.redo();
+  });
+
+  window.schedulePageSearch = {
+    placeholder: "Sök färg eller aktivitet",
+    search(query) {
+      const needle = normalizeSearchText(query);
+      if (!needle) return [];
+
+      return data
+        .map((item) => ({
+          item,
+          score: scoreCupSearch(item.title, needle)
+        }))
+        .filter((entry) => entry.score >= 0)
+        .sort((left, right) => right.score - left.score || String(left.item.title || "").localeCompare(String(right.item.title || ""), "sv"))
+        .map(({ item }) => ({
+          id: item.id,
+          title: item.title || "Aktivitet",
+          subtitle: [item.startTime, item.endTime].filter(Boolean).join("-") || "Cupschema",
+          groupLabel: "Cup",
+          canEdit: true
+        }));
+    },
+    focusResult(resultId) {
+      return focusSearchResult(resultId);
+    },
+    editResult(resultId) {
+      return editSearchResult(resultId);
+    }
+  };
 });

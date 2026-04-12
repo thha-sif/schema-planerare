@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body class="settings-page">
+  <div data-banner-root data-schedule-type="Inställningar" data-page-key="settings"></div>
+
   <main class="settings-shell">
     <h1>Bannerinställningar</h1>
     <p>Hantera klubbinformation för toppbannern. Dessa värden delas av alla schema-sidor.</p>
@@ -24,7 +26,7 @@
         </div>
         <div class="settings-field">
           <label>Klubblogga</label>
-          <img id="logoPreview" class="settings-logo-preview" alt="Förhandsvisning av logga">
+          <img id="logoPreview" class="settings-logo-preview" alt="Förhandsvisning av logga" hidden>
         </div>
       </div>
 
@@ -44,8 +46,8 @@
 
       <div class="settings-actions">
         <button class="is-primary" type="submit">Spara inställningar</button>
-        <button id="resetDefaultsBtn" type="button">Återställ standard</button>
-        <a href="../index.html">Tillbaka till schema</a>
+        <button id="resetDefaultsBtn" type="button">Återställ till standard</button>
+        <a href="#" id="settingsBackLink">Tillbaka till schema</a>
       </div>
     </form>
   </main>

@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const logoPreview = document.getElementById("logoPreview");
   const hint = document.getElementById("settingsHint");
   const resetDefaultsBtn = document.getElementById("resetDefaultsBtn");
+  const settingsBackLink = document.getElementById("settingsBackLink");
 
   const bannerSettings = window.scheduleBannerSettings;
   if (!bannerSettings || typeof bannerSettings.get !== "function") {
@@ -25,10 +26,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!logoPreview) return;
     if (dataUrl) {
       logoPreview.src = dataUrl;
+      logoPreview.hidden = false;
     } else {
       logoPreview.removeAttribute("src");
+      logoPreview.hidden = true;
     }
-    logoPreview.hidden = false;
   }
 
   function fillForm() {
@@ -135,6 +137,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const current = bannerSettings.get();
         syncPreview(current.clubLogoDataUrl || "");
       }
+    });
+  }
+
+  if (settingsBackLink) {
+    settingsBackLink.addEventListener("click", (event) => {
+      event.preventDefault();
+
+      if (window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+
+      window.location.href = "../index.html";
     });
   }
 

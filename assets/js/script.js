@@ -325,10 +325,8 @@ document.addEventListener("DOMContentLoaded", () => {
       slotDuration: "00:15:00",
       snapDuration: "00:15:00",
 
-      // bort med stor vit marginal längst ned
-      height: "auto",
-      contentHeight: "auto",
-      expandRows: false,
+      height: "100%",
+      expandRows: true,
 
       editable: true,
       selectable: true,
@@ -504,7 +502,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       },
 
-      // Titel fet + extra <br> + tid med bindestreck + radbrytning (A-variant)
       eventContent(arg) {
         const start = arg.event.start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
         const end = arg.event.end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -513,8 +510,7 @@ document.addEventListener("DOMContentLoaded", () => {
           html: `
             <div class="ev">
               <b class="ev-title">${arg.event.title}</b>
-              </br>
-              <span class="ev-time">${start}-<br>${end}</span>
+              <span class="ev-time">${start} - ${end}</span>
             </div>
           `
         };
@@ -529,6 +525,71 @@ document.addEventListener("DOMContentLoaded", () => {
   for (const id of CAL_IDS) {
     const cal = createCalendar(id);
     if (cal) calendars[id] = cal;
+  }
+
+  // ----------------- Plan switcher -----------------
+  initPlanSwitcher();
+
+  function initPlanSwitcher() {
+    const PLAN_KEY = "schema-active-plan";
+
+    function getActivePlanId() {
+      for (const pid of CAL_IDS) {
+        const wrapper = document.getElementById(`export-${pid}`);
+        if (wrapper && !wrapper.hidden) return pid;
+      }
+      return CAL_IDS[0];
+    }
+
+    function refreshPlanLayout(planId) {
+      const id = CAL_IDS.includes(planId) ? planId : CAL_IDS[0];
+      const calendar = calendars[id];
+      if (!calendar) return;
+
+      // Hidden->visible transitions need an explicit reflow in FullCalendar.
+      requestAnimationFrame(() => {
+        calendar.updateSize();
+        requestAnimationFrame(() => {
+          calendar.updateSize();
+        });
+      });
+    }
+
+    function showPlan(planId) {
+      const id = CAL_IDS.includes(planId) ? planId : CAL_IDS[0];
+      CAL_IDS.forEach((pid) => {
+        const wrapper = document.getElementById(`export-${pid}`);
+        if (wrapper) wrapper.hidden = (pid !== id);
+      });
+      document.querySelectorAll("[data-plan-id]").forEach((btn) => {
+        btn.classList.toggle("is-active", btn.dataset.planId === id);
+      });
+      try { localStorage.setItem(PLAN_KEY, id); } catch {}
+      refreshPlanLayout(id);
+    }
+
+    let saved = "calendarA";
+    try { saved = localStorage.getItem(PLAN_KEY) || "calendarA"; } catch {}
+    showPlan(saved);
+
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-plan-id]");
+      if (!btn) return;
+      showPlan(btn.dataset.planId);
+    });
+
+    window.addEventListener("resize", () => {
+      refreshPlanLayout(getActivePlanId());
+    });
+
+    window.addEventListener("pageshow", () => {
+      refreshPlanLayout(getActivePlanId());
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) return;
+      refreshPlanLayout(getActivePlanId());
+    });
   }
 
   // Klick utanför events/panel/knappar = avmarkera

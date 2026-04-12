@@ -95,7 +95,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const base = [
       { id: "search", icon: "search.svg", label: "Sök", kind: "utility" },
       { id: "undo", icon: "undo.svg", label: "Ångra", kind: "history" },
-      { id: "redo", icon: "redo.svg", label: "Gör om", kind: "history" }
+      { id: "redo", icon: "redo.svg", label: "Gör om", kind: "history" },
+      { id: "teams", icon: "teams.svg", label: "Lag", kind: "utility" }
     ];
 
     if (pageKey === "training") {
@@ -273,7 +274,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function buildMenuActionsMarkup(pageKey) {
     const actions = getToolbarActions(pageKey)
-      .filter((action) => action.id !== "undo" && action.id !== "redo")
+      .filter((action) => action.id !== "undo" && action.id !== "redo" && action.id !== "teams")
       .flatMap((action) => {
         if (Array.isArray(action.menu) && action.menu.length) {
           return action.menu.map((item) => ({
@@ -633,6 +634,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (actionId === "teams") {
+      openTeamPalette();
+      return;
+    }
+
     if (actionId === "import-json") {
       if (!click("#importJson")) {
         showToast("Import JSON är inte tillgänglig på den här sidan.");
@@ -777,6 +783,152 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       return;
     }
+  }
+
+  // ─────────────────── Nav sidebar ───────────────────
+
+  function buildNavSidebarMarkup(pageKey, isPagesSection) {
+    const links = getMenuLinks(pageKey, isPagesSection);
+
+    const navItems = links.map((item) => {
+      const divider = item.dividerBefore
+        ? '<div class="nav-sidebar__divider" role="separator"></div>'
+        : "";
+      if (item.isCurrent) {
+        return `${divider}<span class="nav-sidebar__link is-current" aria-current="page">${item.label}</span>`;
+      }
+      return `${divider}<a href="${item.href}" class="nav-sidebar__link">${item.label}</a>`;
+    }).join("");
+
+    const PLAN_NAMES = [
+      { id: "calendarA", label: "A-plan" },
+      { id: "calendarB", label: "B-plan" },
+      { id: "calendarS", label: "Skönvik" },
+      { id: "calendarF", label: "Försäsong A-plan" }
+    ];
+
+    const planSwitcherHtml = pageKey === "training"
+      ? `<div class="nav-sidebar__section">
+          <div class="nav-sidebar__section-title">Plan</div>
+          ${PLAN_NAMES.map(({ id, label }) =>
+            `<button type="button" class="nav-sidebar__plan-btn" data-plan-id="${id}">${label}</button>`
+          ).join("")}
+        </div>`
+      : "";
+
+    return `
+      <div class="nav-sidebar__section">
+        <div class="nav-sidebar__section-title">Sidor</div>
+        ${navItems}
+      </div>
+      ${planSwitcherHtml}
+    `;
+  }
+
+  function mountNavSidebar() {
+    const navEl = document.querySelector("[data-nav-root]");
+    if (!navEl) return;
+
+    const pageKey = navEl.dataset.pageKey || "training";
+    const pathName = (window.location && window.location.pathname ? window.location.pathname : "").toLowerCase();
+    const isPagesSection = pathName.includes("/pages/") || /\\pages\\/.test(pathName);
+    navEl.innerHTML = buildNavSidebarMarkup(pageKey, isPagesSection);
+  }
+
+  // ─────────────────── Floating team palette ───────────────────
+
+  let paletteRoot = null;
+  let isPaletteDragging = false;
+  const paletteDragOffset = { x: 0, y: 0 };
+  const PALETTE_POS_KEY = "schema-palette-pos-v1";
+
+  function loadPalettePosition() {
+    try {
+      const raw = localStorage.getItem(PALETTE_POS_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
+  function savePalettePosition(x, y) {
+    try { localStorage.setItem(PALETTE_POS_KEY, JSON.stringify({ x, y })); } catch {}
+  }
+
+  function clampPalettePosition(x, y) {
+    if (!paletteRoot) return { x, y };
+    const pad = 8;
+    const maxX = window.innerWidth - paletteRoot.offsetWidth - pad;
+    const maxY = window.innerHeight - paletteRoot.offsetHeight - pad;
+    return { x: Math.max(pad, Math.min(x, maxX)), y: Math.max(pad, Math.min(y, maxY)) };
+  }
+
+  function ensureTeamPalette(pageKey) {
+    if (paletteRoot) return;
+
+    const isCup = pageKey === "cup";
+    paletteRoot = document.createElement("div");
+    paletteRoot.className = "team-palette no-export";
+    paletteRoot.hidden = true;
+    paletteRoot.innerHTML = `
+      <div class="team-palette__header" data-palette-drag-handle>
+        <span class="team-palette__title">${isCup ? "Färger" : "Lag"}</span>
+        <button type="button" class="team-palette__close" data-palette-close aria-label="Stäng">×</button>
+      </div>
+      <div class="team-palette__body">
+        ${isCup ? '<div class="cup-sidebar-copy">Dra f\u00e4rger h\u00e4rifr\u00e5n</div>' : ""}
+        <div id="teams"></div>
+      </div>
+    `;
+
+    document.body.appendChild(paletteRoot);
+
+    const saved = loadPalettePosition();
+    const defaultX = Math.max(8, window.innerWidth - 196);
+    const defaultY = 64;
+    paletteRoot.style.left = `${saved ? saved.x : defaultX}px`;
+    paletteRoot.style.top = `${saved ? saved.y : defaultY}px`;
+
+    paletteRoot.querySelector("[data-palette-close]")?.addEventListener("click", () => closeTeamPalette());
+
+    const handle = paletteRoot.querySelector("[data-palette-drag-handle]");
+    if (handle) {
+      handle.addEventListener("mousedown", (e) => {
+        if (e.target.closest("button")) return;
+        e.preventDefault();
+        isPaletteDragging = true;
+        const rect = paletteRoot.getBoundingClientRect();
+        paletteDragOffset.x = e.clientX - rect.left;
+        paletteDragOffset.y = e.clientY - rect.top;
+      });
+    }
+
+    document.addEventListener("mousemove", (e) => {
+      if (!isPaletteDragging || !paletteRoot) return;
+      const pos = clampPalettePosition(
+        e.clientX - paletteDragOffset.x,
+        e.clientY - paletteDragOffset.y
+      );
+      paletteRoot.style.left = `${pos.x}px`;
+      paletteRoot.style.top = `${pos.y}px`;
+    });
+
+    document.addEventListener("mouseup", () => {
+      if (!isPaletteDragging) return;
+      isPaletteDragging = false;
+      if (paletteRoot) {
+        const rect = paletteRoot.getBoundingClientRect();
+        savePalettePosition(rect.left, rect.top);
+      }
+    });
+  }
+
+  function openTeamPalette() {
+    if (!paletteRoot) return;
+    paletteRoot.hidden = false;
+  }
+
+  function closeTeamPalette() {
+    if (!paletteRoot) return;
+    paletteRoot.hidden = true;
   }
 
   function buildBannerMarkup(scheduleType, pageKey) {
@@ -1048,6 +1200,13 @@ document.addEventListener("DOMContentLoaded", () => {
   renderBanner(settings);
   initBannerMenu();
   initBannerToolbar();
+
+  const activeBanner = document.querySelector("[data-schedule-banner]");
+  const activePageKey = activeBanner ? (activeBanner.dataset.pageKey || "training") : "training";
+  if (activePageKey !== "settings") {
+    mountNavSidebar();
+    ensureTeamPalette(activePageKey);
+  }
 
   window.scheduleBannerSettings = {
     key: SETTINGS_KEY,

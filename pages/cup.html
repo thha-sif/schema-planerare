@@ -16,6 +16,7 @@
 
   <div class="page">
     <div class="layout">
+
       <div class="main">
         <div class="plan-export" id="export-weekend">
           <div id="weekendCalendar"></div>
@@ -23,17 +24,14 @@
 
         <div class="cup-controls-row no-export">
           <div class="cup-actions-inline">
-            <button id="weekendExportPng" class="legacy-toolbar-control">Exportera som bild</button>
-            <button id="weekendClear" class="legacy-toolbar-control">Rensa schema</button>
+            <button id="weekendExportPng">Exportera som bild</button>
+            <button id="weekendClear">Rensa schema</button>
           </div>
         </div>
 
       </div>
 
-      <aside class="sidebar no-export">
-        <div class="cup-sidebar-copy">Dra färger härifrån</div>
-        <div id="teams"></div>
-      </aside>
+      <nav class="nav-sidebar no-export" data-nav-root data-page-key="cup"></nav>
 
     </div>
   </div>

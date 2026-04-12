@@ -686,7 +686,7 @@ document.addEventListener("DOMContentLoaded", () => {
           html: `
             <div class="ev" title="${escapeHtml(fullTitle)}">
               <b class="ev-title">${titleHtml}</b>
-              <span class="ev-time">${start}-${end}</span>
+              <span class="ev-time">${start} - ${end}</span>
             </div>
           `
         };

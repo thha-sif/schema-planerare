@@ -274,23 +274,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function compareByDropOrder(a, b) {
-    // Apply custom ordering only for direct overlaps at same start/end.
-    const aStart = a && a.start ? Number(new Date(a.start)) : NaN;
-    const bStart = b && b.start ? Number(new Date(b.start)) : NaN;
-    const aEnd = a && a.end ? Number(new Date(a.end)) : NaN;
-    const bEnd = b && b.end ? Number(new Date(b.end)) : NaN;
-
-    if (!Number.isFinite(aStart) || !Number.isFinite(bStart) || !Number.isFinite(aEnd) || !Number.isFinite(bEnd)) {
-      return 0;
-    }
-
-    if (aStart !== bStart || aEnd !== bEnd) {
-      return 0;
-    }
-
     const aStamp = a && a.extendedProps ? Number(a.extendedProps.droppedAt) : 0;
     const bStamp = b && b.extendedProps ? Number(b.extendedProps.droppedAt) : 0;
-
     const safeA = Number.isFinite(aStamp) ? aStamp : 0;
     const safeB = Number.isFinite(bStamp) ? bStamp : 0;
     return safeB - safeA;
@@ -502,7 +487,6 @@ document.addEventListener("DOMContentLoaded", () => {
         html: `
           <div class="ev">
             <b class="ev-title">${arg.event.title}</b>
-            <br>
             <span class="ev-time">${start} - ${end}</span>
           </div>
         `

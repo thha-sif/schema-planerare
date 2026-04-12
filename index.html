@@ -12,17 +12,17 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 
-<body>
+<body class="training-page">
   <div data-banner-root data-page-key="training" data-schedule-type="Träningsschema"></div>
 
   <div class="page">
     <div class="layout">
 
       <div class="main">
-        <button class="no-export legacy-toolbar-control" id="exportAllPdf">Exportera alla scheman (PDF)</button>
+        <button class="no-export" id="exportAllPdf">Exportera alla scheman (PDF)</button>
 
-        <button class="no-export legacy-toolbar-control" id="exportJson">Exportera JSON</button>
-        <label class="no-export legacy-toolbar-control" for="importJson" style="margin-left:10px; cursor:pointer;">
+        <button class="no-export" id="exportJson">Exportera JSON</button>
+        <label class="no-export" for="importJson" style="margin-left:10px; cursor:pointer;">
             Importera JSON
         </label>
         <input class="no-export" id="importJson" type="file" accept="application/json" style="display:none;">
@@ -31,42 +31,41 @@
           <h1>A-plan</h1>
           <div id="calendarA"></div>
         </div>
-        <button class="reset-btn no-export legacy-toolbar-control" data-cal="calendarA">Återställ plan</button>
-        <button class="copy-btn no-export legacy-toolbar-control" data-cal="calendarA">Kopiera plan</button>
-        <button class="export-png no-export legacy-toolbar-control" data-cal="calendarA">Exportera PNG</button>
+        <button class="reset-btn no-export" data-cal="calendarA">Återställ plan</button>
+        <button class="copy-btn no-export" data-cal="calendarA">Kopiera plan</button>
+        <button class="export-png no-export" data-cal="calendarA">Exportera PNG</button>
         <br><br>
 
         <div class="plan-export" id="export-calendarB">
           <h1>B-plan</h1>
           <div id="calendarB"></div>
         </div>
-        <button class="reset-btn no-export legacy-toolbar-control" data-cal="calendarB">Återställ plan</button>
-        <button class="copy-btn no-export legacy-toolbar-control" data-cal="calendarB">Kopiera plan</button>
-        <button class="export-png no-export legacy-toolbar-control" data-cal="calendarB">Exportera PNG</button>
+        <button class="reset-btn no-export" data-cal="calendarB">Återställ plan</button>
+        <button class="copy-btn no-export" data-cal="calendarB">Kopiera plan</button>
+        <button class="export-png no-export" data-cal="calendarB">Exportera PNG</button>
         <br><br>
 
         <div class="plan-export" id="export-calendarS">
           <h1>Skönvik</h1>
           <div id="calendarS"></div>
         </div>
-        <button class="reset-btn no-export legacy-toolbar-control" data-cal="calendarS">Återställ plan</button>
-        <button class="copy-btn no-export legacy-toolbar-control" data-cal="calendarS">Kopiera plan</button>
-        <button class="export-png no-export legacy-toolbar-control" data-cal="calendarS">Exportera PNG</button>
+        <button class="reset-btn no-export" data-cal="calendarS">Återställ plan</button>
+        <button class="copy-btn no-export" data-cal="calendarS">Kopiera plan</button>
+        <button class="export-png no-export" data-cal="calendarS">Exportera PNG</button>
         <br><br>
 
         <div class="plan-export" id="export-calendarF">
           <h1>Försäsong A-plan</h1>
           <div id="calendarF"></div>
         </div>
-        <button class="reset-btn no-export legacy-toolbar-control" data-cal="calendarF">Återställ plan</button>
-        <button class="copy-btn no-export legacy-toolbar-control" data-cal="calendarF">Kopiera plan</button>
-        <button class="export-png no-export legacy-toolbar-control" data-cal="calendarF">Exportera PNG</button>
+        <button class="reset-btn no-export" data-cal="calendarF">Återställ plan</button>
+        <button class="copy-btn no-export" data-cal="calendarF">Kopiera plan</button>
+        <button class="export-png no-export" data-cal="calendarF">Exportera PNG</button>
         <br><br>
 
       </div>
-      <aside class="sidebar no-export">
-        <div id="teams"></div>
-      </aside>
+
+      <nav class="nav-sidebar no-export" data-nav-root data-page-key="training"></nav>
 
     </div>
   </div>

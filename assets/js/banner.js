@@ -70,20 +70,25 @@ document.addEventListener("DOMContentLoaded", () => {
     return words.map((part) => part.charAt(0)).join("");
   }
 
-  function getMenuLinks(pageKey, isPagesSection) {
+  function getMenuLinks(pageKey, isPagesSection, options = {}) {
+    const includeSettings = options.includeSettings !== false;
     const rootIndex = isPagesSection ? "../index.html" : "index.html";
     const matchesPage = isPagesSection ? "matches.html" : "pages/matches.html";
     const cupPage = isPagesSection ? "cup.html" : "pages/cup.html";
     const settingsPage = isPagesSection ? "settings.html" : "pages/settings.html";
 
     const allLinks = [
-      { key: "training", href: rootIndex, label: "Träningsschema" },
+      { key: "settings", href: settingsPage, label: "Inställningar", icon: "settings.svg" },
+      { key: "training", href: rootIndex, label: "Träningsschema", dividerBefore: true, sectionBefore: "Sidor" },
       { key: "matches", href: matchesPage, label: "Matchschema" },
-      { key: "cup", href: cupPage, label: "Spelschema Cup" },
-      { key: "settings", href: settingsPage, label: "Inställningar", dividerBefore: true }
+      { key: "cup", href: cupPage, label: "Spelschema Cup" }
     ];
 
-    return allLinks.map((item) => ({
+    const visibleLinks = includeSettings
+      ? allLinks
+      : allLinks.filter((item) => item.key !== "settings");
+
+    return visibleLinks.map((item) => ({
       ...item,
       isCurrent: item.key === pageKey
     }));
@@ -96,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
       { id: "search", icon: "search.svg", label: "Sök", kind: "utility" },
       { id: "undo", icon: "undo.svg", label: "Ångra", kind: "history" },
       { id: "redo", icon: "redo.svg", label: "Gör om", kind: "history" },
-      { id: "teams", icon: "teams.svg", label: "Lag", kind: "utility" }
+      { id: "teams", icon: "list.svg", label: "Laglista", kind: "utility" }
     ];
 
     if (pageKey === "training") {
@@ -635,7 +640,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (actionId === "teams") {
-      openTeamPalette();
+      if (paletteRoot && !paletteRoot.hidden) {
+        closeTeamPalette();
+      } else {
+        openTeamPalette();
+      }
       return;
     }
 
@@ -788,7 +797,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ─────────────────── Nav sidebar ───────────────────
 
   function buildNavSidebarMarkup(pageKey, isPagesSection) {
-    const links = getMenuLinks(pageKey, isPagesSection);
+    const links = getMenuLinks(pageKey, isPagesSection, { includeSettings: false });
 
     const navItems = links.map((item) => {
       const divider = item.dividerBefore
@@ -940,10 +949,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const menuLinks = getMenuLinks(pageKey, isPagesSection)
       .map((item) => {
         const divider = item.dividerBefore ? '<div class="app-banner__menu-divider" role="separator"></div>' : "";
+        const section = item.sectionBefore ? `<div class="app-banner__menu-section">${item.sectionBefore}</div>` : "";
+        const icon = item.icon
+          ? `<img class="app-banner__menu-link-icon" src="${iconsBase}${item.icon}" alt="" aria-hidden="true" width="14" height="14">`
+          : "";
+        const label = `<span class="app-banner__menu-link-content">${icon}<span>${item.label}</span></span>`;
         if (item.isCurrent) {
-          return `${divider}<span class="app-banner__menu-item is-current" aria-current="page">${item.label}</span>`;
+          return `${divider}${section}<span class="app-banner__menu-item is-current" aria-current="page">${label}</span>`;
         }
-        return `${divider}<a href="${item.href}">${item.label}</a>`;
+        return `${divider}${section}<a href="${item.href}">${label}</a>`;
       })
       .join("");
 

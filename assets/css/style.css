@@ -359,6 +359,19 @@ body{
   background: #f8fafc;
 }
 
+.app-banner__menu-link-content{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-banner__menu-link-icon{
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  object-fit: contain;
+}
+
 .app-banner__menu-panel a:hover{
   background: #f1f5f9;
 }
@@ -559,6 +572,10 @@ a.nav-sidebar__link:hover{
   overflow: hidden;
 }
 
+.team-palette.team-palette--wide{
+  width: 320px;
+}
+
 .team-palette[hidden]{
   display: none;
 }
@@ -616,6 +633,18 @@ a.nav-sidebar__link:hover{
   flex-direction: column;
   gap: 8px;
   margin-top: 10px;
+}
+
+#teams.teams-list--two-column{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+#teams.teams-list--two-column .teams-list__col{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .team-item{

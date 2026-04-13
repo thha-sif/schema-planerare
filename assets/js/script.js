@@ -2,9 +2,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const STORAGE_KEY = "schema-planerare-v1";
 
   const TEAMS = [
-    "P12 9️⃣", "P13 9️⃣", "P14 7️⃣", "P15 7️⃣", "P16 7️⃣", "P17 5️⃣", "P18 5️⃣", "P19 3️⃣", "PF20 3️⃣", "PF21","P-GUDH",
-    "F12 9️⃣", "F13 9️⃣", "F14 7️⃣", "F15 7️⃣", "F16 7️⃣", "F17 5️⃣", "F18 5️⃣", "F19 3️⃣", "F-GUDH",
-    "Herrar A", "Herrar U", "Damer A", "Stjärnlaget", "Herrar Div 8", "Gåfotboll", "Match"
+    "P12 9️⃣", "P13 9️⃣", "P14 7️⃣", "P15 7️⃣", "P16 7️⃣", "P17 5️⃣", "P18 5️⃣", "P19 3️⃣", "P-GUDH", "PF20 3️⃣", "PF21",
+    "Herrar A", "Herrar U", "Herrar Div 8", "Gåfotboll", "Stjärnlaget",
+    "F12 9️⃣", "F13 9️⃣", "F14 7️⃣", "F15 7️⃣", "F16 7️⃣", "F17 5️⃣", "F18 5️⃣", "F19 3️⃣", "F-GUDH", "Damer A", "Match"
   ];
 
   const CAL_IDS = ["calendarA", "calendarB", "calendarS", "calendarF"];
@@ -285,7 +285,29 @@ document.addEventListener("DOMContentLoaded", () => {
     const teamsEl = document.getElementById("teams");
     if (!teamsEl) return;
 
-    teamsEl.innerHTML = TEAMS.map(name => `<div class="team-item">${name}</div>`).join("");
+    const paletteRoot = teamsEl.closest(".team-palette");
+    const twoColumnThreshold = 16;
+
+    if (TEAMS.length > twoColumnThreshold) {
+      teamsEl.classList.add("teams-list--two-column");
+      if (paletteRoot) paletteRoot.classList.add("team-palette--wide");
+
+      const firstColumn = TEAMS.slice(0, twoColumnThreshold)
+        .map((name) => `<div class="team-item">${name}</div>`)
+        .join("");
+      const secondColumn = TEAMS.slice(twoColumnThreshold)
+        .map((name) => `<div class="team-item">${name}</div>`)
+        .join("");
+
+      teamsEl.innerHTML = `
+        <div class="teams-list__col">${firstColumn}</div>
+        <div class="teams-list__col">${secondColumn}</div>
+      `;
+    } else {
+      teamsEl.classList.remove("teams-list--two-column");
+      if (paletteRoot) paletteRoot.classList.remove("team-palette--wide");
+      teamsEl.innerHTML = TEAMS.map(name => `<div class="team-item">${name}</div>`).join("");
+    }
 
     if (!FullCalendar.Draggable) {
       console.warn("FullCalendar.Draggable saknas. Kontrollera att @fullcalendar/interaction är laddat.");
@@ -561,6 +583,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const wrapper = document.getElementById(`export-${pid}`);
         if (wrapper) wrapper.hidden = (pid !== id);
       });
+
+      const activeWrapper = document.getElementById(`export-${id}`);
+      if (activeWrapper) {
+        const headingText = EXPORT_NAMES[id] || id;
+        let heading = activeWrapper.querySelector("h1");
+        if (!heading) {
+          heading = document.createElement("h1");
+          activeWrapper.prepend(heading);
+        }
+        heading.textContent = headingText;
+        heading.hidden = false;
+      }
+
       document.querySelectorAll("[data-plan-id]").forEach((btn) => {
         btn.classList.toggle("is-active", btn.dataset.planId === id);
       });

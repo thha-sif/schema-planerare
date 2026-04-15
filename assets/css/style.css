@@ -394,7 +394,7 @@ body{
 
 .ev-title {
   display: block;
-  font-size: 15px;   /* lite större än tiden */
+  font-size: 16px;
 }
 
 .ev-title-line{
@@ -414,16 +414,15 @@ body{
 }
 
 /* --- Wrap i överlappande event (timeGridWeek) --- */
-/* Lägg flex på main (inte main-frame) för att inte sabba resizer */
 .fc .fc-timegrid-event .fc-event-main{
   display: flex;
   flex-direction: column;
 }
 
-/* === Event: färgad vänsterkant (stripe) === */
+/* === Event stripe === */
 .fc .fc-timegrid-event,
 .fc .fc-daygrid-event{
-  overflow: visible; /* viktig: låt resize-handtaget vara klickbart */
+  overflow: visible;
 }
 
 .fc .fc-timegrid-event::before,
@@ -516,7 +515,7 @@ body{
   border-radius: 6px;
   color: #374151;
   text-decoration: none;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   margin-bottom: 2px;
 }
@@ -541,7 +540,7 @@ a.nav-sidebar__link:hover{
   border: none;
   background: none;
   color: #374151;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   margin-bottom: 2px;
@@ -655,7 +654,7 @@ a.nav-sidebar__link:hover{
   background: #F8FAFC;
   border: 1px solid #e5e7eb;
   color: #000;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .team-item:active{
@@ -910,7 +909,7 @@ a.nav-sidebar__link:hover{
 
 .settings-shell h1{
   margin: 0 0 8px;
-  font-size: 22px;
+  font-size: 20px;
 }
 
 .settings-shell p{

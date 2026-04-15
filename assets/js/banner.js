@@ -128,15 +128,15 @@ document.addEventListener("DOMContentLoaded", () => {
         {
           id: "export-media-group",
           icon: "image.svg",
-          label: "Bild/PDF",
+          label: "Exportera bilder",
           kind: "io",
           menu: [
-            { id: "export-pdf", icon: "pdf.svg", label: "PDF" },
+            { id: "export-pdf", icon: "pdf.svg", label: "PDF alla" },
             { id: "export-png-calendarA", icon: "image.svg", label: "PNG A-plan" },
             { id: "export-png-calendarB", icon: "image.svg", label: "PNG B-plan" },
             { id: "export-png-calendarS", icon: "image.svg", label: "PNG Skönvik" },
             { id: "export-png-calendarF", icon: "image.svg", label: "PNG Försäsong" },
-            { id: "export-png-all", icon: "image.svg", label: "PNG Alla" }
+            { id: "export-png-all", icon: "image.svg", label: "PNG alla" }
           ]
         },
         {
@@ -195,7 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (pageKey === "cup") {
       return [
         ...base,
-        { id: "export-png", icon: "image.svg", label: "Export PNG", kind: "io" },
+        { id: "export-png", icon: "image.svg", label: "Exportera bild", kind: "io" },
         { id: "reset-cup", icon: "reset.svg", label: "Återställ schema", kind: "io" }
       ];
     }

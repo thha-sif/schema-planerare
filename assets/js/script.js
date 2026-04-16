@@ -745,14 +745,53 @@ document.addEventListener("DOMContentLoaded", () => {
     return (name || "").replace(/[\\/:*?"<>|]/g, "-").trim();
   }
 
+  function waitForRender() {
+    return new Promise((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    });
+  }
+
   async function captureElementAsCanvas(el) {
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await waitForRender();
 
     return html2canvas(el, {
       backgroundColor: "#ffffff",
       scale: 1,
-      useCORS: true
+      useCORS: true,
+      scrollX: 0,
+      scrollY: -window.scrollY
     });
+  }
+
+  async function capturePlanCanvas(calId) {
+    const wrapper = document.getElementById(`export-${calId}`);
+    if (!wrapper) return null;
+
+    const previousVisibility = CAL_IDS.map((pid) => {
+      const el = document.getElementById(`export-${pid}`);
+      return { pid, el, hidden: el ? el.hidden : true };
+    });
+
+    try {
+      previousVisibility.forEach(({ pid, el }) => {
+        if (el) el.hidden = (pid !== calId);
+      });
+
+      if (calendars[calId]) calendars[calId].updateSize();
+      await waitForRender();
+      if (calendars[calId]) calendars[calId].updateSize();
+
+      return await captureElementAsCanvas(wrapper);
+    } finally {
+      previousVisibility.forEach(({ el, hidden }) => {
+        if (el) el.hidden = hidden;
+      });
+
+      const activePlan = previousVisibility.find((entry) => entry.el && !entry.hidden);
+      if (activePlan && calendars[activePlan.pid]) {
+        calendars[activePlan.pid].updateSize();
+      }
+    }
   }
 
   function downloadDataUrl(dataUrl, filename) {
@@ -765,49 +804,78 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function exportPlanPng(calId) {
-    const wrapper = document.getElementById(`export-${calId}`);
-    if (!wrapper) return;
+    const canvas = await capturePlanCanvas(calId);
+    if (!canvas || !canvas.width || !canvas.height) {
+      alert("Kunde inte exportera planen som PNG.");
+      return;
+    }
 
-    const canvas = await captureElementAsCanvas(wrapper, 1);
     const dataUrl = canvas.toDataURL("image/png", 1.0);
-
     const niceName = EXPORT_NAMES[calId] || calId;
     downloadDataUrl(dataUrl, `${safeFilename(niceName)}.png`);
   }
 
   async function exportAllPdf() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4", compress: true });
+    try {
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert("jsPDF-biblioteket är inte laddat. Försök igen senare.");
+        return;
+      }
 
-    const order = ["calendarA", "calendarB", "calendarS", "calendarF"].filter(id => {
-      return document.getElementById(`export-${id}`);
-    });
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+        compress: true
+      });
 
-    for (let i = 0; i < order.length; i++) {
-      const calId = order[i];
-      const wrapper = document.getElementById(`export-${calId}`);
-
-      const canvas = await captureElementAsCanvas(wrapper);
-      const imgData = canvas.toDataURL("image/png", 1.0);
+      const order = CAL_IDS.filter((id) => document.getElementById(`export-${id}`));
+      if (order.length === 0) {
+        alert("Inga planer att exportera.");
+        return;
+      }
 
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 10;
+      let addedPages = 0;
 
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
+      for (const calId of order) {
+        try {
+          const canvas = await capturePlanCanvas(calId);
+          if (!canvas || !canvas.width || !canvas.height) {
+            console.warn(`Tom exportyta för ${calId}`);
+            continue;
+          }
 
-      const ratio = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
-      const w = imgWidth * ratio;
-      const h = imgHeight * ratio;
+          const imgData = canvas.toDataURL("image/png", 1.0);
+          const maxWidth = pageWidth - (margin * 2);
+          const maxHeight = pageHeight - (margin * 2);
+          const ratio = Math.min(maxWidth / canvas.width, maxHeight / canvas.height);
+          const imgWidth = canvas.width * ratio;
+          const imgHeight = canvas.height * ratio;
+          const x = (pageWidth - imgWidth) / 2;
+          const y = (pageHeight - imgHeight) / 2;
 
-      const x = (pageWidth - w) / 2;
-      const y = (pageHeight - h) / 2;
+          if (addedPages > 0) doc.addPage();
+          doc.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
+          addedPages += 1;
+        } catch (err) {
+          console.error(`Fel vid export av ${calId}:`, err);
+        }
+      }
 
-      if (i > 0) doc.addPage();
-      doc.addImage(imgData, "PNG", x, y, w, h);
+      if (addedPages === 0) {
+        alert("Kunde inte exportera några scheman till PDF.");
+        return;
+      }
+
+      doc.save("Alla scheman.pdf");
+    } catch (err) {
+      console.error("Fel vid PDF-export:", err);
+      alert("Kunde inte exportera PDF. Se konsolen för detaljer.");
     }
-
-    doc.save("Alla scheman.pdf");
   }
 
   // PNG per plan

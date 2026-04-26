@@ -793,6 +793,18 @@ document.addEventListener("DOMContentLoaded", () => {
     URL.revokeObjectURL(url);
   }
 
+  function downloadCsvFile(filename, text) {
+    const blob = new Blob(["\uFEFF", text], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
   function makeExportPayload() {
     return {
       app: "schema-matches",
@@ -800,6 +812,47 @@ document.addEventListener("DOMContentLoaded", () => {
       exportedAt: new Date().toISOString(),
       schedules
     };
+  }
+
+  function formatDateForCsv(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+  }
+
+  function formatTimeForCsv(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+  }
+
+  function escapeCsvCell(value) {
+    const text = String(value == null ? "" : value);
+    if (/[";,\n\r\t]/.test(text)) {
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+    return text;
+  }
+
+  function makeMatchesCsvText() {
+    const header = ["Matchnr", "Tävling", "Hemmalag", "Bortalag", "Datum", "Starttid", "Sluttid", "Anläggning"];
+    const rows = [header.join(";")];
+
+    (schedules[CAL_ID] || []).forEach((item, index) => {
+      const parts = parseMatchTitleParts(item.title);
+      rows.push([
+        String(index + 1),
+        parts.competition,
+        parts.homeTeam,
+        parts.awayTeam,
+        formatDateForCsv(item.start),
+        formatTimeForCsv(item.start),
+        formatTimeForCsv(item.end),
+        item.facility || ""
+      ].map(escapeCsvCell).join(";"));
+    });
+
+    return rows.join("\r\n");
   }
 
   function normalizeHeaderName(value) {
@@ -1049,6 +1102,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const payload = makeExportPayload();
       const niceDate = new Date().toISOString().slice(0, 10);
       downloadTextFile(`matches-backup-${niceDate}.json`, JSON.stringify(payload, null, 2));
+    });
+  }
+
+  const exportCsvBtn = document.getElementById("exportCsv");
+  if (exportCsvBtn) {
+    exportCsvBtn.addEventListener("click", () => {
+      const niceDate = new Date().toISOString().slice(0, 10);
+      downloadCsvFile(`matches-backup-${niceDate}.csv`, makeMatchesCsvText());
     });
   }
 

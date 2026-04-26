@@ -185,7 +185,8 @@ document.addEventListener("DOMContentLoaded", () => {
           label: "Exportera",
           kind: "io",
           menu: [
-            { id: "export-json", icon: "json-file.svg", label: "JSON" }
+            { id: "export-json", icon: "json-file.svg", label: "JSON" },
+            { id: "export-csv", icon: "file-csv.svg", label: "CSV" }
           ]
         },
         { id: "reset-matches", icon: "reset.svg", label: "Återställ schema", kind: "io" }
@@ -665,6 +666,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (actionId === "export-json") {
       if (!click("#exportJson")) {
         showToast("Export JSON är inte tillgänglig på den här sidan.");
+      }
+      return;
+    }
+
+    if (actionId === "export-csv") {
+      if (!click("#exportCsv")) {
+        showToast("Export CSV är inte tillgänglig på den här sidan.");
       }
       return;
     }

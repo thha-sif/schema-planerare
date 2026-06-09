@@ -13,6 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const schedules = loadSchedules();
+  const history = createHistoryManager();
+  const eventElements = new Map();
 
   let selectedEvent = null;
   let selectedCalendarId = null;
@@ -42,12 +44,200 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(schedules));
   }
 
+  function snapshotSchedules() {
+    return clone(schedules);
+  }
+
+  function applySchedulesState(nextState) {
+    for (const id of Object.keys(defaultSchedules)) {
+      schedules[id] = Array.isArray(nextState && nextState[id]) ? clone(nextState[id]) : [];
+    }
+
+    saveSchedules();
+    clearSelection();
+
+    if (calendar) {
+      calendar.removeAllEvents();
+      calendar.addEventSource(schedules[CAL_ID]);
+      fitCalendarToViewport(calendar, CAL_ID);
+    }
+  }
+
+  function emitHistoryState() {
+    if (!history) return;
+    document.dispatchEvent(new CustomEvent("schedule:history-state", {
+      detail: {
+        canUndo: history.canUndo(),
+        canRedo: history.canRedo()
+      }
+    }));
+  }
+
+  function createHistoryManager() {
+    if (!window.scheduleHistory || typeof window.scheduleHistory.createManager !== "function") return null;
+
+    const manager = window.scheduleHistory.createManager({
+      applyState: applySchedulesState,
+      onStateChange(state) {
+        document.dispatchEvent(new CustomEvent("schedule:history-state", { detail: state }));
+      }
+    });
+
+    return manager;
+  }
+
+  function recordHistory(beforeState) {
+    if (!history) return;
+    history.record(beforeState, snapshotSchedules());
+    emitHistoryState();
+  }
+
   function makeId(prefix) {
     return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   }
 
+  function pad2(n) {
+    return String(n).padStart(2, "0");
+  }
+
+  function toDateTimeLocalValue(value) {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}T${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+  }
+
   function eventKey(ev) {
     return ev.id || (ev._def && ev._def.publicId) || "";
+  }
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function abbreviateCompetitionForDisplay(value) {
+    return String(value || "")
+      .replace(/Flickor/gi, "F")
+      .replace(/Pojkar/gi, "P")
+      .replace(/Division/gi, "Div")
+      .replace(/7-m/gi, "7️⃣")
+      .replace(/9-m/gi, "9️⃣")
+      .replace(/Grp\./gi, "G")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function buildDisplayTitleParts(rawTitle) {
+    const fullParts = String(rawTitle || "")
+      .split(" - ")
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    if (!fullParts.length) {
+      return { fullParts: [""], displayParts: [""] };
+    }
+
+    const [competition, homeTeam, awayTeam, ...rest] = fullParts;
+    const displayParts = [
+      abbreviateCompetitionForDisplay(competition),
+      homeTeam,
+      awayTeam,
+      ...rest
+    ].filter(Boolean);
+
+    return {
+      fullParts,
+      displayParts: displayParts.length ? displayParts : fullParts
+    };
+  }
+
+  function parseMatchTitleParts(rawTitle) {
+    const parts = String(rawTitle || "")
+      .split(" - ")
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    const [competition = "", homeTeam = "", awayTeam = "", ...rest] = parts;
+
+    return {
+      competition,
+      homeTeam,
+      awayTeam,
+      extraParts: rest
+    };
+  }
+
+  function composeMatchTitle(competition, homeTeam, awayTeam) {
+    return [competition, homeTeam, awayTeam]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean)
+      .join(" - ");
+  }
+
+  function normalizeSearchText(value) {
+    return String(value || "").toLowerCase().trim();
+  }
+
+  function scoreMatchesSearch(parts, facility, needle) {
+    const competition = normalizeSearchText(parts.competition);
+    const homeTeam = normalizeSearchText(parts.homeTeam);
+    const awayTeam = normalizeSearchText(parts.awayTeam);
+    const facilityText = normalizeSearchText(facility);
+
+    if (homeTeam === needle || awayTeam === needle) return 500;
+    if (homeTeam.startsWith(needle) || awayTeam.startsWith(needle)) return 380;
+    if (competition === needle) return 320;
+    if (competition.startsWith(needle)) return 260;
+    if (facilityText === needle) return 220;
+    if (facilityText.startsWith(needle)) return 180;
+    if (homeTeam.includes(needle) || awayTeam.includes(needle)) return 160;
+    if (competition.includes(needle)) return 120;
+    if (facilityText.includes(needle)) return 90;
+    return -1;
+  }
+
+  function formatSearchDate(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return date.toLocaleString("sv-SE", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function focusSearchResult(resultId) {
+    const event = calendar && calendar.getEventById(resultId);
+    const eventEl = eventElements.get(resultId);
+    const wrapper = document.getElementById("export-calendarMatches");
+
+    if (wrapper) {
+      wrapper.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    if (!event || !eventEl) return false;
+
+    setSelection(event, CAL_ID, eventEl);
+    eventEl.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    eventEl.focus({ preventScroll: true });
+    return true;
+  }
+
+  function editSearchResult(resultId) {
+    const event = calendar && calendar.getEventById(resultId);
+    const eventEl = eventElements.get(resultId);
+    if (!event || !eventEl) return false;
+
+    setSelection(event, CAL_ID, eventEl);
+    editEventTitle(event, CAL_ID, eventEl);
+    return true;
   }
 
   function colorFromTitle(title) {
@@ -94,17 +284,19 @@ document.addEventListener("DOMContentLoaded", () => {
   function normalizeFacilityChoice(value) {
     const raw = String(value || "").trim().toLowerCase();
 
-    if (!raw || raw === "0" || raw === "null" || raw === "ingen" || raw === "none") return "";
-    if (raw === "1" || raw === "skönviks ip") return "Skönviks IP";
-    if (raw === "2" || raw === "säters ip a-plan") return "Säters IP A-plan";
+    if (!raw || raw === "null" || raw === "ingen" || raw === "none") return null;
+    if (raw === "säters ip b-plan") return "Säters IP B-plan";
+    if (raw === "skönviks ip") return "Skönviks IP";
+    if (raw === "säters ip a-plan") return "Säters IP A-plan";
 
     return null;
   }
 
   function facilityPromptDefaultValue(facility) {
-    if (facility === "Skönviks IP") return "1";
-    if (facility === "Säters IP A-plan") return "2";
-    return "0";
+    if (facility === "Säters IP B-plan") return "Säters IP B-plan";
+    if (facility === "Skönviks IP") return "Skönviks IP";
+    if (facility === "Säters IP A-plan") return "Säters IP A-plan";
+    return "";
   }
 
   function applyEventColors(ev, el) {
@@ -120,6 +312,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function syncEditButtonState() {
+    // Matches no longer shows a separate edit toolbar button.
+  }
+
   function clearSelection() {
     if (selectedEl) {
       selectedEl.style.outline = "";
@@ -130,6 +326,7 @@ document.addEventListener("DOMContentLoaded", () => {
     selectedCalendarId = null;
     selectedKey = null;
     selectedEl = null;
+    syncEditButtonState();
   }
 
   function setSelection(ev, calId, el) {
@@ -147,40 +344,102 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedEl.style.outline = "2px solid #000000";
       selectedEl.style.outlineOffset = "1px";
     }
+
+    syncEditButtonState();
   }
 
   function editEventTitle(ev, calId, el) {
-    const newTitle = prompt("Redigera lagnamn", ev.title);
-    if (newTitle === null) return;
-
-    const currentFacility = (ev.extendedProps && ev.extendedProps.facility) || "";
-    const facilityInput = prompt(
-      "Anläggning: 0 = Säters IP B-plan, 1 = Skönviks IP, 2 = Säters IP A-plan",
-      facilityPromptDefaultValue(currentFacility)
-    );
-    if (facilityInput === null) return;
-
-    const newFacility = normalizeFacilityChoice(facilityInput);
-    if (newFacility === null) {
-      alert("Ogiltigt val av anläggning. Använd 1, 2 eller 0.");
-      return;
-    }
-
-    ev.setProp("title", newTitle);
-    ev.setExtendedProp("facility", newFacility);
-    ev.setExtendedProp("noFixedTime", false);
+    if (!ev || !calId) return;
 
     const key = eventKey(ev);
     const item = schedules[calId].find((x) => x.id === key);
-    if (item) {
+    if (!item) return;
+
+    const modal = window.scheduleEventModal;
+    if (!modal || typeof modal.open !== "function") {
+      const newTitle = prompt("Redigera lagnamn", ev.title);
+      if (newTitle === null) return;
+
+      ev.setProp("title", newTitle);
       item.title = newTitle;
-      item.facility = newFacility;
-      item.noFixedTime = false;
+      applyEventColors(ev, el);
+      saveSchedules();
+      return;
     }
 
-    applyEventColors(ev, el);
+    setSelection(ev, calId, el || selectedEl);
+    const titleParts = parseMatchTitleParts(item.title);
 
-    saveSchedules();
+    modal.open({
+      dialogTitle: "Redigera match",
+      showFields: {
+        competition: true,
+        homeTeam: true,
+        awayTeam: true,
+        startDateTime: true,
+        endDateTime: true,
+        facility: true
+      },
+      values: {
+        competition: titleParts.competition,
+        homeTeam: titleParts.homeTeam,
+        awayTeam: titleParts.awayTeam,
+        startDateTime: toDateTimeLocalValue(item.start),
+        endDateTime: toDateTimeLocalValue(item.end),
+        facility: item.facility ?? ""
+      },
+      statusText: "Uppdatera namn, tid och anläggning för den markerade matchen.",
+      onSave(nextValues) {
+        const beforeState = snapshotSchedules();
+        if (!nextValues.competition || !nextValues.homeTeam || !nextValues.awayTeam) {
+          modal.setStatus("Tävling, hemmalag och bortalag måste fyllas i.");
+          return false;
+        }
+
+        const nextStart = new Date(nextValues.startDateTime);
+        const nextEnd = new Date(nextValues.endDateTime);
+
+        if (Number.isNaN(nextStart.getTime()) || Number.isNaN(nextEnd.getTime())) {
+          modal.setStatus("Start och slut måste fyllas i.");
+          return false;
+        }
+
+        if (nextEnd <= nextStart) {
+          modal.setStatus("Sluttiden måste vara senare än starttiden.");
+          return false;
+        }
+
+        const nextTitle = composeMatchTitle(nextValues.competition, nextValues.homeTeam, nextValues.awayTeam);
+
+        ev.setProp("title", nextTitle);
+        ev.setStart(nextStart);
+        ev.setEnd(nextEnd);
+        const nextFacility = nextValues.facility || null;
+
+        ev.setExtendedProp("facility", nextFacility);
+
+        item.title = nextTitle;
+        item.start = nextStart.toISOString();
+        item.end = nextEnd.toISOString();
+        item.facility = nextFacility;
+
+        applyEventColors(ev, el || selectedEl);
+        saveSchedules();
+        recordHistory(beforeState);
+      },
+      onDelete() {
+        const beforeState = snapshotSchedules();
+        const idx = schedules[calId].findIndex((x) => x.id === key);
+        if (idx !== -1) {
+          schedules[calId].splice(idx, 1);
+        }
+
+        ev.remove();
+        clearSelection();
+        saveSchedules();
+        recordHistory(beforeState);
+      }
+    });
   }
 
   function initTeamsPanel() {
@@ -207,8 +466,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const calendarEl = document.getElementById(id);
     if (!calendarEl) return null;
 
-    const initialHeight = getViewportCalendarHeight(calendarEl);
-
     const calendar = new FullCalendar.Calendar(calendarEl, {
       initialView: "timeGridWeek",
       headerToolbar: {
@@ -230,7 +487,7 @@ document.addEventListener("DOMContentLoaded", () => {
       slotDuration: "00:30:00",
       snapDuration: "00:30:00",
 
-      height: initialHeight,
+      height: "100%",
       expandRows: true,
 
       editable: true,
@@ -243,22 +500,86 @@ document.addEventListener("DOMContentLoaded", () => {
       events: schedules[id],
 
       select(info) {
-        const title = prompt("Lag namn");
-        if (!title) return;
+        const initialStart = info.start;
+        const initialEnd = info.end || new Date(info.start.getTime() + 60 * 60 * 1000);
+        const modal = window.scheduleEventModal;
 
-        const item = {
-          id: makeId(id),
-          title,
-          start: info.start.toISOString(),
-          end: info.end.toISOString()
-        };
+        if (!modal || typeof modal.open !== "function") {
+          const title = prompt("Lag namn");
+          if (!title) return;
 
-        schedules[id].push(item);
-        calendar.addEvent(item);
-        saveSchedules();
+          const item = {
+            id: makeId(id),
+            title,
+            start: initialStart.toISOString(),
+            end: initialEnd.toISOString()
+          };
+
+          schedules[id].push(item);
+          calendar.addEvent(item);
+          saveSchedules();
+          return;
+        }
+
+        modal.open({
+          dialogTitle: "Ny match",
+          showFields: {
+            competition: true,
+            homeTeam: true,
+            awayTeam: true,
+            startDateTime: true,
+            endDateTime: true,
+            facility: true
+          },
+          values: {
+            competition: "",
+            homeTeam: "",
+            awayTeam: "",
+            startDateTime: toDateTimeLocalValue(initialStart),
+            endDateTime: toDateTimeLocalValue(initialEnd),
+            facility: "Säters IP B-plan"
+          },
+          statusText: "Ange namn, tider och anläggning för den nya matchen.",
+          onSave(nextValues) {
+            const beforeState = snapshotSchedules();
+            if (!nextValues.competition || !nextValues.homeTeam || !nextValues.awayTeam) {
+              modal.setStatus("Tävling, hemmalag och bortalag måste fyllas i.");
+              return false;
+            }
+
+            const nextStart = new Date(nextValues.startDateTime);
+            const nextEnd = new Date(nextValues.endDateTime);
+
+            if (Number.isNaN(nextStart.getTime()) || Number.isNaN(nextEnd.getTime())) {
+              modal.setStatus("Start och slut måste fyllas i.");
+              return false;
+            }
+
+            if (nextEnd <= nextStart) {
+              modal.setStatus("Sluttiden måste vara senare än starttiden.");
+              return false;
+            }
+
+            const nextTitle = composeMatchTitle(nextValues.competition, nextValues.homeTeam, nextValues.awayTeam);
+
+            const item = {
+              id: makeId(id),
+              title: nextTitle,
+              facility: nextValues.facility || null,
+              start: nextStart.toISOString(),
+              end: nextEnd.toISOString()
+            };
+
+            schedules[id].push(item);
+            calendar.addEvent(item);
+            saveSchedules();
+            recordHistory(beforeState);
+          }
+        });
       },
 
       eventReceive(info) {
+        const beforeState = snapshotSchedules();
         const start = info.event.start;
         const end = info.event.end || new Date(start.getTime() + 60 * 60 * 1000);
 
@@ -274,9 +595,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         info.event.remove();
         calendar.addEvent(item);
+        recordHistory(beforeState);
       },
 
       eventDrop(info) {
+        const beforeState = snapshotSchedules();
         const key = eventKey(info.event);
         const item = schedules[id].find((x) => x.id === key);
         if (!item) return;
@@ -289,21 +612,26 @@ document.addEventListener("DOMContentLoaded", () => {
         applyEventColors(info.event, info.el);
 
         saveSchedules();
+        recordHistory(beforeState);
       },
 
       eventResize(info) {
+        const beforeState = snapshotSchedules();
         const key = eventKey(info.event);
         const item = schedules[id].find((x) => x.id === key);
         if (!item) return;
 
         item.end = info.event.end.toISOString();
         saveSchedules();
+        recordHistory(beforeState);
       },
 
       eventDidMount(info) {
         applyEventColors(info.event, info.el);
+        info.el.tabIndex = 0;
 
         const key = eventKey(info.event);
+        eventElements.set(key, info.el);
         if (selectedKey && selectedCalendarId === id && key === selectedKey) {
           setSelection(info.event, id, info.el);
         }
@@ -321,22 +649,44 @@ document.addEventListener("DOMContentLoaded", () => {
             setSelection(info.event, id, info.el);
             editEventTitle(info.event, id, info.el);
           });
+
+          info.el.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setSelection(info.event, id, info.el);
+
+            const contextMenu = window.scheduleEventContextMenu;
+            if (contextMenu && typeof contextMenu.show === "function") {
+              contextMenu.show({
+                x: e.clientX,
+                y: e.clientY,
+                onEdit: () => editEventTitle(info.event, id, info.el)
+              });
+              return;
+            }
+
+            editEventTitle(info.event, id, info.el);
+          });
         }
       },
 
       eventContent(arg) {
         const start = arg.event.start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
         const end = arg.event.end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-        const titleHtml = String(arg.event.title || "")
-          .split(" - ")
-          .map((part) => part.trim())
-          .join("<br>");
+        const fullTitle = String(arg.event.title || "").trim();
+        const { fullParts, displayParts } = buildDisplayTitleParts(fullTitle);
+        const titleHtml = displayParts
+          .map((part, idx) => {
+            const fullPart = fullParts[idx] || fullTitle;
+            return `<span class="ev-title-line" title="${escapeHtml(fullPart)}">${escapeHtml(part)}</span>`;
+          })
+          .join("");
 
         return {
           html: `
-            <div class="ev">
+            <div class="ev" title="${escapeHtml(fullTitle)}">
               <b class="ev-title">${titleHtml}</b>
-              <span class="ev-time">${start}-${end}</span>
+              <span class="ev-time">${start} - ${end}</span>
             </div>
           `
         };
@@ -373,23 +723,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initTeamsPanel();
 
   const calendar = createCalendar(CAL_ID);
-  requestAnimationFrame(() => {
-    fitCalendarToViewport(calendar, CAL_ID);
-  });
-
-  window.addEventListener("load", () => {
-    fitCalendarToViewport(calendar, CAL_ID);
-  });
-
-  let resizeRaf = 0;
-  window.addEventListener("resize", () => {
-    if (!calendar) return;
-
-    if (resizeRaf) cancelAnimationFrame(resizeRaf);
-    resizeRaf = requestAnimationFrame(() => {
-      fitCalendarToViewport(calendar, CAL_ID);
-    });
-  });
 
   document.addEventListener("click", (e) => {
     const clickedEvent = e.target.closest(".fc-event");
@@ -398,35 +731,70 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!clickedEvent && !clickedSidebar && !clickedControl) clearSelection();
   });
 
+  syncEditButtonState();
+
   document.addEventListener("keydown", (e) => {
     if (!selectedEvent || !selectedCalendarId) return;
     if (e.key !== "Delete" && e.key !== "Backspace") return;
+    if (window.scheduleEventModal && window.scheduleEventModal.isOpen()) return;
 
-    const key = eventKey(selectedEvent);
-    const list = schedules[selectedCalendarId];
-    const idx = list.findIndex((x) => x.id === key);
-    if (idx !== -1) list.splice(idx, 1);
+    e.preventDefault();
 
-    selectedEvent.remove();
-    clearSelection();
-    saveSchedules();
+    const contextMenu = window.scheduleEventContextMenu;
+    if (contextMenu && typeof contextMenu.confirmDelete === "function") {
+      const calId = selectedCalendarId;
+      const key = eventKey(selectedEvent);
+      const ev = selectedEvent;
+      const el = selectedEl;
+      contextMenu.confirmDelete({
+        targetEl: el,
+        onConfirm() {
+          const beforeState = snapshotSchedules();
+          const idx = schedules[calId].findIndex((x) => x.id === key);
+          if (idx !== -1) schedules[calId].splice(idx, 1);
+          ev.remove();
+          clearSelection();
+          saveSchedules();
+          recordHistory(beforeState);
+        }
+      });
+    } else {
+      editEventTitle(selectedEvent, selectedCalendarId, selectedEl);
+    }
   });
 
   const resetBtn = document.querySelector(`.reset-btn[data-cal="${CAL_ID}"]`);
   if (resetBtn && calendar) {
     resetBtn.addEventListener("click", () => {
-      const ok = confirm("Återställa Matches till blankt?");
+      const beforeState = snapshotSchedules();
+      const skipConfirm = resetBtn.dataset.resetConfirmed === "true";
+      resetBtn.dataset.resetConfirmed = "false";
+
+      const ok = skipConfirm ? true : confirm("Återställa Matches till blankt?");
       if (!ok) return;
 
       schedules[CAL_ID] = [];
       saveSchedules();
       calendar.removeAllEvents();
       clearSelection();
+      recordHistory(beforeState);
     });
   }
 
   function downloadTextFile(filename, text) {
     const blob = new Blob([text], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadCsvFile(filename, text) {
+    const blob = new Blob(["\uFEFF", text], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -444,6 +812,47 @@ document.addEventListener("DOMContentLoaded", () => {
       exportedAt: new Date().toISOString(),
       schedules
     };
+  }
+
+  function formatDateForCsv(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+  }
+
+  function formatTimeForCsv(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+  }
+
+  function escapeCsvCell(value) {
+    const text = String(value == null ? "" : value);
+    if (/[";,\n\r\t]/.test(text)) {
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+    return text;
+  }
+
+  function makeMatchesCsvText() {
+    const header = ["Matchnr", "Tävling", "Hemmalag", "Bortalag", "Datum", "Starttid", "Sluttid", "Anläggning"];
+    const rows = [header.join(";")];
+
+    (schedules[CAL_ID] || []).forEach((item, index) => {
+      const parts = parseMatchTitleParts(item.title);
+      rows.push([
+        String(index + 1),
+        parts.competition,
+        parts.homeTeam,
+        parts.awayTeam,
+        formatDateForCsv(item.start),
+        formatTimeForCsv(item.start),
+        formatTimeForCsv(item.end),
+        item.facility || ""
+      ].map(escapeCsvCell).join(";"));
+    });
+
+    return rows.join("\r\n");
   }
 
   function normalizeHeaderName(value) {
@@ -563,7 +972,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function durationMinutesFromCompetition(competition) {
-    return /7️⃣/i.test(String(competition || "")) ? 90 : 120;
+    return /(7️⃣|7-m|7m|7\s*v\s*7|7\s*mot\s*7)/i.test(String(competition || "")) ? 90 : 120;
   }
 
   function normalizeCsvToSchedules(rows) {
@@ -572,22 +981,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     normalized[CAL_ID] = rows
       .map((row) => {
-        let competition = String(row["tävling"] || "").trim();
-        competition = competition
-          .replace(/Flickor/g, "F")
-          .replace(/Pojkar/g, "P")
-          .replace(/Division/g, "Div")
-          .replace(/7-m/g, "7️⃣")
-          .replace(/9-m/g, "9️⃣")
-          .replace(/Grp./g, "G");
-        let homeTeam = String(row["hemmalag"] || "").trim();
-        homeTeam = homeTeam
-          .replace(/s IF FK/g, "");
-        let awayTeam = String(row["bortalag"] || "").trim();
-        awayTeam = awayTeam
-          .replace(/IFK /g, "")
-          .replace(/IF /g, "")
-          .slice(0, 8).trim();
+        const competition = String(row["tävling"] || "").replace(/\s+/g, " ").trim();
+        const homeTeam = String(row["hemmalag"] || "").replace(/\s+/g, " ").trim();
+        const awayTeam = String(row["bortalag"] || "").replace(/\s+/g, " ").trim();
         const facility = String(row["anläggning"] || "").trim();
         const dateTimeRaw = String(row["datum / tid"] || "").trim();
         const noFixedTime = /(Tid\s+ej\s+fastställd)/i.test(dateTimeRaw);
@@ -646,7 +1042,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .map((x) => ({
           id: String(x.id || makeId(id)),
           title: String(x.title || ""),
-          facility: String(x.facility || ""),
+          facility: x.facility == null || String(x.facility).trim() === "" ? null : String(x.facility).trim(),
           noFixedTime: Boolean(x.noFixedTime),
           start: String(x.start || ""),
           end: String(x.end || "")
@@ -663,6 +1059,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function applyImportedSchedules(newSchedules) {
+    const beforeState = snapshotSchedules();
     for (const id of Object.keys(defaultSchedules)) {
       schedules[id] = newSchedules[id] || [];
     }
@@ -675,7 +1072,29 @@ document.addEventListener("DOMContentLoaded", () => {
       calendar.addEventSource(schedules[CAL_ID]);
       fitCalendarToViewport(calendar, CAL_ID);
     }
+
+    recordHistory(beforeState);
   }
+
+  document.addEventListener("schedule:undo-request", (event) => {
+    if (!history) return;
+    if (event && event.detail && typeof event.detail === "object") {
+      event.detail.handled = true;
+    }
+    history.undo();
+    emitHistoryState();
+  });
+
+  document.addEventListener("schedule:redo-request", (event) => {
+    if (!history) return;
+    if (event && event.detail && typeof event.detail === "object") {
+      event.detail.handled = true;
+    }
+    history.redo();
+    emitHistoryState();
+  });
+
+  emitHistoryState();
 
   const exportJsonBtn = document.getElementById("exportJson");
   if (exportJsonBtn) {
@@ -683,6 +1102,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const payload = makeExportPayload();
       const niceDate = new Date().toISOString().slice(0, 10);
       downloadTextFile(`matches-backup-${niceDate}.json`, JSON.stringify(payload, null, 2));
+    });
+  }
+
+  const exportCsvBtn = document.getElementById("exportCsv");
+  if (exportCsvBtn) {
+    exportCsvBtn.addEventListener("click", () => {
+      const niceDate = new Date().toISOString().slice(0, 10);
+      downloadCsvFile(`matches-backup-${niceDate}.csv`, makeMatchesCsvText());
     });
   }
 
@@ -767,4 +1194,35 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  window.schedulePageSearch = {
+    placeholder: "Sök lag, tävling eller anläggning",
+    search(query) {
+      const needle = normalizeSearchText(query);
+      if (!needle) return [];
+
+      return (schedules[CAL_ID] || [])
+        .map((item) => {
+          const titleParts = parseMatchTitleParts(item.title);
+          const score = scoreMatchesSearch(titleParts, item.facility, needle);
+
+          return { item, titleParts, score };
+        })
+        .filter((entry) => entry.score >= 0)
+        .sort((left, right) => right.score - left.score || String(left.item.title || "").localeCompare(String(right.item.title || ""), "sv"))
+        .map(({ item, titleParts }) => ({
+          id: item.id,
+          title: `${titleParts.homeTeam || "Hemmalag"} - ${titleParts.awayTeam || "Bortalag"}`,
+          subtitle: [titleParts.competition, item.facility, formatSearchDate(item.start)].filter(Boolean).join(" · "),
+          groupLabel: "Matchschema",
+          canEdit: true
+        }));
+    },
+    focusResult(resultId) {
+      return focusSearchResult(resultId);
+    },
+    editResult(resultId) {
+      return editSearchResult(resultId);
+    }
+  };
 });

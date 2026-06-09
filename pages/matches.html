@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Matches</title>
+
+  <link rel="stylesheet" href="../assets/css/style.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+</head>
+
+<body class="matches-page">
+  <div data-banner-root data-page-key="matches" data-schedule-type="Matchschema"></div>
+
+  <div class="page">
+    <div class="layout">
+
+      <div class="main">
+        <button class="no-export" id="exportJson">Exportera JSON</button>
+        <button class="no-export" id="exportCsv" hidden>Exportera CSV</button>
+        <label class="no-export" for="importJson" style="margin-left:10px; cursor:pointer;">
+          Importera JSON
+        </label>
+        <input class="no-export" id="importJson" type="file" accept="application/json" style="display:none;">
+        <label class="no-export" for="importCsv" style="margin-left:10px; cursor:pointer;">
+          Importera CSV
+        </label>
+        <input class="no-export" id="importCsv" type="file" accept=".csv,text/csv,.txt" style="display:none;">
+
+        <div class="plan-export" id="export-calendarMatches">
+          <div id="calendarMatches"></div>
+        </div>
+        <button class="reset-btn no-export" data-cal="calendarMatches">Återställ plan</button>
+
+      </div>
+
+      <nav class="nav-sidebar no-export" data-nav-root data-page-key="matches"></nav>
+
+    </div>
+  </div>
+
+  <div class="event-modal" data-event-modal hidden>
+    <div class="event-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">
+      <div class="event-modal__header">
+        <h2 id="eventModalTitle" data-event-modal-title>Redigera match</h2>
+        <button type="button" class="event-modal__icon-btn" data-event-modal-close aria-label="Stäng">×</button>
+      </div>
+
+      <form class="event-modal__form" data-event-modal-form>
+        <div class="event-modal__fields">
+          <label class="event-modal__field" data-field-wrap="competition">
+            <span>Tävling</span>
+            <input data-field="competition" type="text" maxlength="80" required>
+          </label>
+
+          <label class="event-modal__field" data-field-wrap="homeTeam">
+            <span>Hemmalag</span>
+            <input data-field="homeTeam" type="text" maxlength="80" required>
+          </label>
+
+          <label class="event-modal__field" data-field-wrap="awayTeam">
+            <span>Bortalag</span>
+            <input data-field="awayTeam" type="text" maxlength="80" required>
+          </label>
+
+          <label class="event-modal__field" data-field-wrap="startDateTime">
+            <span>Start</span>
+            <input data-field="startDateTime" type="datetime-local" required>
+          </label>
+
+          <label class="event-modal__field" data-field-wrap="endDateTime">
+            <span>Slut</span>
+            <input data-field="endDateTime" type="datetime-local" required>
+          </label>
+
+          <label class="event-modal__field" data-field-wrap="facility">
+            <span>Anläggning</span>
+            <select data-field="facility">
+              <option value="">Ingen anläggning</option>
+              <option value="Säters IP A-plan">Säters IP A-plan</option>
+              <option value="Säters IP B-plan">Säters IP B-plan</option>
+              <option value="Skönviks IP">Skönviks IP</option>              
+            </select>
+          </label>
+        </div>
+
+        <p class="event-modal__status" data-event-modal-status aria-live="polite"></p>
+
+        <div class="event-modal__actions">
+          <button type="submit" class="is-primary">Spara</button>
+          <button type="button" class="is-danger" data-event-modal-delete>Ta bort</button>
+          <button type="button" data-event-modal-close>Avbryt</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../assets/js/banner.js"></script>
+  <script src="../assets/js/history.js"></script>
+  <script src="../assets/js/event-modal.js"></script>
+  <script src="../assets/js/matches.js"></script>
+</body>
+</html>

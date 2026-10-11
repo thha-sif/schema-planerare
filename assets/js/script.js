@@ -2,9 +2,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const STORAGE_KEY = "schema-planerare-v1";
 
   const TEAMS = [
-    "P12 9️⃣", "P13 9️⃣", "P14 7️⃣", "P15 7️⃣", "P16 7️⃣", "P17 5️⃣", "P18 5️⃣", "P19 3️⃣", "P-GUDH", "PF20 3️⃣", "PF21",
-    "Herrar A", "Herrar U", "Herrar Div 8", "Gåfotboll", "Stjärnlaget",
-    "F12 9️⃣", "F13 9️⃣", "F14 7️⃣", "F15 7️⃣", "F16 7️⃣", "F17 5️⃣", "F18 5️⃣", "F19 3️⃣", "F-GUDH", "Damer A", "Match"
+    "P12", "P14 9️⃣", "P15 7️⃣", "P16 7️⃣", "P17 7️⃣", "P18 5️⃣", "P19 5️⃣", "P20 3️⃣", "PF21 3️⃣", "PF22",
+    "P-GUDH", "Herrar A", "Herrar U", "Herrar Div 8", "Gåfotboll", "Stjärnlaget",
+    "F12", "F13 9️⃣", "F14 9️⃣", "F15 7️⃣", "F16 7️⃣", "F17 7️⃣", "F18 5️⃣", "F19 5️⃣", "F20 3️⃣", "F-GUDH",
+    "Damer A", "Match"
   ];
 
   const CAL_IDS = ["calendarA", "calendarB", "calendarS", "calendarF"];
@@ -330,7 +331,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const isPlanS = (id === "calendarS");
     const minTime = isPlanS ? "09:30:00" : "10:00:00";
-    const maxTime = isPlanS ? "19:00:00" : "21:30:00";
+    const maxTime = isPlanS ? "20:00:00" : "21:30:00";
 
     const calendar = new FullCalendar.Calendar(calendarEl, {
       initialView: "timeGridWeek",
